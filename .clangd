@@ -1,0 +1,12 @@
+CompileFlags:
+  Add: [-Wno-everything, -std=c++23]
+
+Diagnostics:
+  UnusedIncludes: None
+  
+---
+
+If:
+  PathMatch: algos/.*
+Diagnostics: 
+  Suppress: '*'
