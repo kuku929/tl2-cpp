@@ -11,9 +11,9 @@ bazel build //src:<name-of-target>
 Documentation for ![MODULE.bazel](https://bazel.build/external/overview)
 
 ## TODO
-[] Split into different files
-[] Use CAS operations
+[x] Split into different files
+[x] Use CAS operations - DP
 [] See how to specify own hash function(easy)
 [] Any way to detect invalid get/set at compile time?
 [] Add support for arbitrary data types
-[] Testbench
+[] Testbench - KP

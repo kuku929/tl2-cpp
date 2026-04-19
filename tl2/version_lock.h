@@ -1,42 +1,70 @@
 #pragma once
-#include <mutex> // for now
+#include <atomic>
+#include <thread>
 #include "types.h"
 
 struct VersionLock {
-public: 
-    version_t get_version() {
-        const std::lock_guard<std::mutex> lock(m_lock);
-        return m_v;
+public:
+    version_t get_version() const {
+        while (true) {
+            const auto s = m_state.load(std::memory_order_acquire);
+            if ((s & kLocked) == 0) return unpack_version(s);
+            std::this_thread::yield();
+        }
     }
 
-    version_t unsafe_get_version() {
-        return m_v;
+    version_t unsafe_get_version() const {
+        return unpack_version(m_state.load(std::memory_order_relaxed));
     }
 
     version_t incr_version() {
-        const std::lock_guard<std::mutex> lock(m_lock);
-        m_v++;
-        return m_v;
+        const auto new_state =
+            m_state.fetch_add(kVersionInc, std::memory_order_acq_rel) + kVersionInc;
+        return unpack_version(new_state);
     }
 
     void set_version(version_t v) {
-        const std::lock_guard<std::mutex> lock(m_lock);
-        m_v = v;
+        while (true) {
+            auto s = m_state.load(std::memory_order_acquire);
+            if (s & kLocked) { std::this_thread::yield(); continue; }
+            if (m_state.compare_exchange_weak(
+                    s, pack(v, false),
+                    std::memory_order_release,
+                    std::memory_order_acquire)) return;
+        }
     }
 
     void unsafe_set_version(version_t v) {
-        m_v = v;
+        const auto s = m_state.load(std::memory_order_relaxed);
+        const bool locked = (s & kLocked) != 0;
+        m_state.store(pack(v, locked), std::memory_order_release);
     }
 
     void lock() {
-        m_lock.lock();
+        while (true) {
+            auto s = m_state.load(std::memory_order_acquire);
+            if (s & kLocked) { std::this_thread::yield(); continue; }
+            if (m_state.compare_exchange_weak(
+                    s, s | kLocked,
+                    std::memory_order_acquire,
+                    std::memory_order_relaxed)) return;
+        }
     }
 
     void unlock() {
-        m_lock.unlock();
+        m_state.fetch_and(~kLocked, std::memory_order_release);
     }
 private:
-    version_t m_v = 0;
-    // TODO: Using a mutex for now. Ideally CAS operation
-    std::mutex m_lock;
+    static constexpr version_t kLocked = 1;
+    static constexpr version_t kVersionInc = 2;
+
+    static constexpr version_t pack(version_t v, bool locked) {
+        return (v << 1) | (locked ? 1 : 0);
+    }
+
+    static constexpr version_t unpack_version(version_t s) {
+        return s >> 1;
+    }
+
+    std::atomic<version_t> m_state{0};
 } static global_clock;
