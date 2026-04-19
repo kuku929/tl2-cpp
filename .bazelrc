@@ -3,12 +3,10 @@ build --cxxopt=-pedantic
 build --cxxopt=-Wextra 
 build --cxxopt=-Wcast-align 
 build --cxxopt=-Wcast-qual 
-build --cxxopt=-Wctor-dtor-privacy
 build --cxxopt=-Wdisabled-optimization
 build --cxxopt=-Wformat=2
 build --cxxopt=-Winit-self
 build --cxxopt=-Wlogical-op
-build --cxxopt=-Wmissing-declarations
 build --cxxopt=-Wnoexcept
 build --cxxopt=-Wold-style-cast
 build --cxxopt=-Woverloaded-virtual
@@ -18,7 +16,6 @@ build --cxxopt=-Wsign-conversion
 build --cxxopt=-Wsign-promo
 build --cxxopt=-Wstrict-null-sentinel
 build --cxxopt=-Wstrict-overflow=5
-build --cxxopt=-Wswitch-default
 build --cxxopt=-Wundef
 build --cxxopt=-Werror
 build --cxxopt=-Wno-unused

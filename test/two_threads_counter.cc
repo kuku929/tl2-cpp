@@ -1,13 +1,13 @@
 #include <iostream>
 #include <thread>
 #include "tl2/tl2.h"
+#include <gtest/gtest.h>
 
-int main(int argc, char *argv[]) {
-    // TODO : test cases(a lot of them)
+uint run(const uint niters) {
     TVar counter(0);
     std::thread t1([&]() {
         STM::atomically([&]() {
-            for(int __i = 0; __i < 100'000; ++__i) {
+            for(uint __i = 0; __i < niters; ++__i) {
                 uint val = counter.get();
                 counter.set(val + 1);
             }
@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     });
     std::thread t2([&]() {
         STM::atomically([&]() {
-            for(int __i = 0; __i < 100'000; ++__i) {
+            for(uint __i = 0; __i < niters; ++__i) {
                 uint val = counter.get();
                 counter.set(val + 1);
             }
@@ -23,7 +23,16 @@ int main(int argc, char *argv[]) {
     });
     t1.join();
     t2.join();
-    STM::atomically([&]() {
-        std::cout << counter.get() << std::endl;
-    });
+    uint ans = 0; {
+        STM::atomically([&]() {
+            ans = counter.get();
+        });
+    }
+    return ans;
+}
+
+TEST(SimpleTests, TwoThreadsCounter) {
+    for(uint niters = 1; niters < 100'000; niters += 1000) {
+        EXPECT_EQ(run(niters), 2 * niters);
+    }
 }
