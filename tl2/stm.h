@@ -1,23 +1,11 @@
 #pragma once
 #include "hash_table.h"
+#include "t_var.h" // for in_transaction
 #include "read_set.h"
 #include "write_set.h"
 
 
 namespace STM {
-    struct TxContext {
-    private:
-        struct PrivateTag {};
-        explicit TxContext(PrivateTag) {}
-        template<typename Transaction> friend void atomically(Transaction t);
-    };
-    /* TVar::get() and TVar::set() now require a STM::TxContext parameter in t_var.h.
-    STM::TxContext cannot be directly constructed by users, because its constructor is private in stm.h.
-    Only STM::atomically() is a friend and can create that token in stm.h.
-    So code outside a transaction cannot call get/set (it has no valid token), and this fails at compile time.
-    So this replaces runtime assert(in_transaction) with compile-time API gating.
-    */
-
     static bool lock_write_set() {
         for(const auto& op : write_set) {
             // TODO: this should be bounded?
@@ -65,8 +53,9 @@ namespace STM {
     template<typename Transaction> static void atomically(Transaction t) {
         while(true) {
             const auto read_version = global_clock.get_version();
-            auto tx = TxContext(TxContext::PrivateTag{});
-            t(tx);
+            in_transaction = true;
+            t();
+            in_transaction = false;
             if(try_commit(read_version)) break;
         }
     }

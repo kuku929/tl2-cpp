@@ -14,6 +14,6 @@ Documentation for ![MODULE.bazel](https://bazel.build/external/overview)
 [x] Split into different files
 [x] Use CAS operations - DP
 [] See how to specify own hash function(easy)
-[x] Any way to detect invalid get/set at compile time? - DP
+[] Any way to detect invalid get/set at compile time?
 [] Add support for arbitrary data types
 [] Testbench - KP
