@@ -6,21 +6,6 @@
 
 
 namespace STM {
-    static bool lock_write_set() {
-        for(const auto& op : write_set) {
-            // TODO: this should be bounded?
-            hashtbl[op.address].lock();
-        }
-        return true;
-    }
-
-    static void unlock_write_set() {
-        // TODO: could be a member function of WriteSet
-        for(const auto& op : write_set) {
-            hashtbl[op.address].unlock();
-        }
-    }
-
     static void commit(version_t write_version) {
         for(const auto& op : write_set) {
             *op.address = op.val;
@@ -29,22 +14,21 @@ namespace STM {
     }
 
     static bool try_commit(const auto read_version) {
-        lock_write_set();
+        auto guard = make_lock_guard(write_set.begin(), write_set.end(), [](const auto& op) -> VersionLock& {
+            return hashtbl[op.address];
+        });
         const auto write_version = global_clock.incr_version();
         if(write_version == read_version + 1) {
             // no other thread has made changes commit
             commit(write_version);
-            unlock_write_set();
             return true;
         }
         for(const auto& op : read_set) {
             if(hashtbl[std::get<addr_t>(op)].unsafe_get_version() > read_version) {
-                unlock_write_set();
                 return false;
             }
         }
         commit(write_version);
-        unlock_write_set();
         return true;
     };
 

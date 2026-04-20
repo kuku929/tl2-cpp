@@ -1,6 +1,8 @@
 #pragma once
 #include <atomic>
 #include <thread>
+#include <unordered_set>
+#include <vector>
 #include "types.h"
 
 struct VersionLock {
@@ -68,3 +70,37 @@ private:
 
     std::atomic<version_t> m_state{0};
 } static global_clock;
+
+template<typename It, typename LockSelector>
+struct LockGuard {
+public:
+    LockGuard(It begin, It end, LockSelector lock_selector) {
+        std::unordered_set<VersionLock*> seen;
+        for(auto it = begin; it != end; ++it) {
+            VersionLock* lock = &lock_selector(*it);
+            if(seen.insert(lock).second) {
+                lock->lock();
+                m_locked.push_back(lock);
+            }
+        }
+    }
+
+    ~LockGuard() {
+        for(auto it = m_locked.rbegin(); it != m_locked.rend(); ++it) {
+            (*it)->unlock();
+        }
+    }
+
+    LockGuard(const LockGuard&) = delete;
+    LockGuard& operator=(const LockGuard&) = delete;
+    LockGuard(LockGuard&&) = delete;
+    LockGuard& operator=(LockGuard&&) = delete;
+
+private:
+    std::vector<VersionLock*> m_locked;
+};
+
+template<typename It, typename LockSelector>
+auto make_lock_guard(It begin, It end, LockSelector lock_selector) {
+    return LockGuard<It, LockSelector>(begin, end, lock_selector);
+}
