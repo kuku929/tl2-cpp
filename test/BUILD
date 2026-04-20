@@ -9,3 +9,13 @@ cc_test(
         "//tl2:tl2"
     ],
 )
+cc_test(
+    name = "peterson",
+    size = "small",
+    srcs = ["peterson.cc"],
+    deps = [
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "//tl2:tl2"
+    ],
+)

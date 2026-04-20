@@ -29,14 +29,14 @@ namespace STM {
     }
 
     static bool try_commit(const auto read_version) {
+        lock_write_set();
         const auto write_version = global_clock.incr_version();
         if(write_version == read_version + 1) {
             // no other thread has made changes commit
             commit(write_version);
+            unlock_write_set();
             return true;
         }
-        // std::cout << "acquiring write set" << std::endl;
-        lock_write_set();
         for(const auto& op : read_set) {
             if(hashtbl[std::get<addr_t>(op)].unsafe_get_version() > read_version) {
                 unlock_write_set();
@@ -44,7 +44,6 @@ namespace STM {
             }
         }
         commit(write_version);
-        // std::cout << "unlocking write set" << std::endl;
         unlock_write_set();
         return true;
     };
@@ -54,6 +53,8 @@ namespace STM {
         while(true) {
             const auto read_version = global_clock.get_version();
             in_transaction = true;
+            read_set.clear();
+            write_set.clear();
             t();
             in_transaction = false;
             if(try_commit(read_version)) break;

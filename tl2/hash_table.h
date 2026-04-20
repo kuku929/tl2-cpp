@@ -11,14 +11,14 @@ private:
     size_t mask;
 
 public:
-    explicit LockTable(size_t size_pow2) : table(size_pow2) , mask(size_pow2) {}
+    explicit LockTable(const size_t size_pow2) : table(size_pow2) , mask(size_pow2 - 1) {}
 
     //maps address to version lock (hashing)
-    inline VersionLock& operator[] (uint32_t* addr) {
-        uintptr_t x = reinterpret_cast<uintptr_t>(addr);
-        size_t index = (x>>3) & mask;
+    inline VersionLock& operator[] (const uint* addr) {
+        const auto x = reinterpret_cast<uintptr_t>(const_cast<addr_t>(addr));
+        size_t index = (x>>2) & mask;
         return table[index];
     }
 };
 
-LockTable hashtbl(LOCKTABLE_SIZE);
+static LockTable hashtbl(LOCKTABLE_SIZE);

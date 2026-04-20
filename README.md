@@ -51,9 +51,10 @@ Refer to googletest [documentation](https://github.com/google/googletest/blob/ma
 		- [ ] Bounded Queue
 		- [ ] Lockfree Stack
 		- [ ] Elimination Backoff Stack
-- [ ] Use CAS operations
+- [ ] Add a guard to VersionLock(to remove unsafe_get/set)
 - [ ] See how to specify own hash function(easy)
 - [ ] Add support for arbitrary data types
 - [x] Testbench
 - [x] Split into different files
 - [x] Any way to detect invalid get/set at compile time?
+- [x] Use CAS operations
