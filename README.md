@@ -27,10 +27,13 @@ the target name is defined in test/BUILD.
 Refer to googletest [documentation](https://github.com/google/googletest/blob/main/docs/primer.md) for further guidance
 
 ## TODO
+- [ ] Benchmark [STAMP](https://github.com/kozyraki/stamp/tree/master)
+	- [ ] Is the read-set effecient?
+		- Try : bloom filter, unordered_set, google dense hash map
 - [ ] Add more tests
 	- [ ] Lecture 02
 		- [ ] Bakery
-		- [ ] Peterson
+		- [x] Peterson
 		- [x] Counter
 	- [ ] Lecture 03
 		- [ ] Bounded Queue
@@ -52,9 +55,9 @@ Refer to googletest [documentation](https://github.com/google/googletest/blob/ma
 		- [ ] Lockfree Stack
 		- [ ] Elimination Backoff Stack
 - [ ] Add a guard to VersionLock(to remove unsafe_get/set)
-- [ ] See how to specify own hash function(easy)
 - [ ] Add support for arbitrary data types
 - [x] Testbench
 - [x] Split into different files
 - [x] Any way to detect invalid get/set at compile time?
 - [x] Use CAS operations
+- [x] See how to specify own hash function(easy)
