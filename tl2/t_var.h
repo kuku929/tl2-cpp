@@ -16,7 +16,7 @@ struct TVar {
 public:
     TVar(uint data) : m_data(data) {}
 
-    uint get() {
+    uint get() const {
         assert(in_transaction);
         const auto address = &m_data;
         /*see if address exists in read-set*/ {
