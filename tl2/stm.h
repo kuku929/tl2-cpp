@@ -15,6 +15,7 @@ inline void commit(version_t write_version) {
   for (auto op : log.writes()) {
     std::memcpy(reinterpret_cast<void *>(op.addr()),
                 reinterpret_cast<void *>(op.val_addr()), op.bytes_size());
+    hashtbl[op.addr()].unsafe_set_version(write_version);
   }
 }
 

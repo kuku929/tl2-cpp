@@ -5,6 +5,9 @@
 #include "write_set.h"
 #include <cassert>
 #include <optional>
+#include <array>
+#include <memory_resource>
+#include <cstring>
 #include "memory.h"
 
 namespace tl2::internal {
@@ -12,8 +15,11 @@ namespace tl2::internal {
 	template<typename WriteSetT, typename ReadSetT>
 	class Log {
 	public:
-		Log() : r(),
-				w() {;}
+		Log()
+		    : r(), w(), buf{} {
+			res = std::make_unique<std::pmr::monotonic_buffer_resource>(buf.data(), buf.size(), std::pmr::null_memory_resource());
+			buf.fill(std::byte{0});
+		}
 		
 		template<typename T>
 		std::optional<T> value_at(const T* addr) const {
@@ -32,19 +38,35 @@ namespace tl2::internal {
 			if(r.contains(op))
 				r.modify(op);
 			else r.insert(op);
-		};
+		}
 
 		template<typename T>
 		void append_write(const T* addr, const T& val) noexcept {
-			const WriteOp &op = { addr, &val };
-			if(w.contains(op))
-				w.modify(op);
-			else w.insert(op);
-		};
+			const addr_t a = reinterpret_cast<addr_t>(addr);
+			const auto entry = w.find_opt(a);
+			if ( entry.has_value()) {
+				// Address already in write-set: overwrite existing staged value.
+				std::memcpy(reinterpret_cast<void*>(entry.value()), reinterpret_cast<const void*>(&val), sizeof(T));
+				return;
+				// w.modify not required
+			}
+
+			// First write for this address in this transaction: stage a copied value.
+			const std::size_t nbytes = sizeof(T);
+			void* storage = res->allocate(nbytes, alignof(T));
+			std::memcpy(storage, reinterpret_cast<const void*>(&val), nbytes);
+			const T* copied_ptr = reinterpret_cast<const T*>(storage);
+			const WriteOp &op = { addr, copied_ptr };
+			w.insert(op);
+		}
 
 		void clear() {
 			r.clear();
 			w.clear();
+			// reset memory resource so allocations are reclaimed for next transaction
+			res.reset();
+			buf.fill(std::byte{0});
+			res = std::make_unique<std::pmr::monotonic_buffer_resource>(buf.data(), buf.size(), std::pmr::null_memory_resource());
 		}
 
 		WriteSetT& writes() {
@@ -58,6 +80,10 @@ namespace tl2::internal {
 	private:
 		ReadSetT r;
 		WriteSetT w;
+		// per-transaction contiguous buffer and memory resource for write copies
+		static constexpr std::size_t kBufSize = 4 * 1024;
+		std::array<std::byte, kBufSize> buf;
+		std::unique_ptr<std::pmr::monotonic_buffer_resource> res;
 	};
 	inline static thread_local Log<WriteOrderedSet, ReadOrderedSet> log;
 } // tl2::internal
