@@ -57,8 +57,13 @@ Refer to googletest [documentation](https://github.com/google/googletest/blob/ma
 		- [ ] Bounded Queue
 		- [ ] Lockfree Stack
 		- [ ] Elimination Backoff Stack
-- [ ] Add a guard to VersionLock(to remove unsafe_get/set)
-- [ ] Add support for arbitrary data types
+- [ ] Better exception handling
+	- [ ] A state machine
+- [ ] Log memory allocation and cleanup in case of abort
+- [ ] Add per-transaction buffers and synchronized pool resource
+	- [ ] Test which is better.
+- [x] Add a guard to VersionLock(to remove unsafe_get/set)
+- [x] Add support for arbitrary data types
 - [x] Testbench
 - [x] Split into different files
 - [x] Any way to detect invalid get/set at compile time?

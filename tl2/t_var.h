@@ -1,49 +1,41 @@
 #pragma once
+#include "log.h"
+#include "state.h"
+#include "types.h"
+#include "version_lock.h"
 #include <cassert>
 #include <iostream>
-#include "types.h"
-#include "read_set.h"
-#include "write_set.h"
-#include "hash_table.h"
+#include <memory_resource>
 #include <thread>
 
 // TODO: Any way to detect invalid get/set at compile time?
-thread_local bool in_transaction = false;
-
-// Assumption: a variable is only an int
-// Can I map the full memory space though?
-struct TVar {
+namespace tl2 {
+using namespace tl2::internal;
+template <typename T> class TVar {
 public:
-    TVar(uint data) : m_data(data) {}
+  TVar(T data) : m_data(std::move(data)) {}
 
-    uint get() {
-        assert(in_transaction);
-        const auto address = &m_data;
-        /*see if address exists in read-set*/ {
-            if(read_set.find({ address, m_data }) == read_set.end()) {
-                read_set.insert({ address, hashtbl[address].get_version() });
-            }
-        }
-        /*find the value*/ {
-            const auto itr = write_set.find({ address, m_data });
-            if(itr != write_set.end()) {
-                return itr->val;
-            }
-            return m_data;
-        }
-    }
+  explicit operator T() const {
+    manager.assert_in_transaction();
+    const T *address = &m_data;
+    // NOTE: can we prevent copying here?
+    T val = m_data;
+    std::optional<T> entry;
+    if ((entry = log.value_at(address)).has_value())
+      val = entry.value();
+    log.append_read(address);
+    return val;
+  }
 
-    void set(uint val) {
-        assert(in_transaction);
-        const auto op = WriteOp{
-            .address = &m_data, 
-            .val = val};
-        auto itr = write_set.find(op);
-        if(itr != write_set.end()) {
-            write_set.erase(itr);
-        }
-        write_set.insert(op);
-    }
+  TVar& operator=(T &val) {
+    manager.assert_in_transaction();
+    if (&val == &m_data)
+      return *this;
+    log.append_write(&m_data, val);
+    return *this;
+  }
+
 private:
-    uint m_data;
+  T m_data;
 };
+} // namespace tl2

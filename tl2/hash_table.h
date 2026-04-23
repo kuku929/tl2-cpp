@@ -1,24 +1,26 @@
 #pragma once
-#include <vector>
-#include "version_lock.h"
 #include "types.h"
+#include "version_lock.h"
+#include <vector>
 
-constexpr size_t LOCKTABLE_SIZE = 1<<20;
+namespace tl2::internal {
+using namespace tl2::internal;
+constexpr size_t LOCKTABLE_SIZE = 1 << 20;
 
-struct LockTable{
+class LockTable {
 private:
-    std::vector<VersionLock> table;
-    size_t mask;
+  std::vector<VersionLock> table;
+  size_t mask;
 
 public:
-    explicit LockTable(const size_t size_pow2) : table(size_pow2) , mask(size_pow2 - 1) {}
+  explicit LockTable(const size_t size_pow2)
+      : table(size_pow2), mask(size_pow2 - 1) {}
 
-    //maps address to version lock (hashing)
-    inline VersionLock& operator[] (const uint* addr) {
-        const auto x = reinterpret_cast<uintptr_t>(const_cast<addr_t>(addr));
-        size_t index = (x>>2) & mask;
-        return table[index];
-    }
-};
-
-static LockTable hashtbl(LOCKTABLE_SIZE);
+  // maps address to version lock (hashing)
+  inline VersionLock &operator[](const addr_t addr) {
+    const auto x = reinterpret_cast<uintptr_t>(addr);
+    size_t index = (x >> 2) & mask;
+    return table[index];
+  }
+} static hashtbl(LOCKTABLE_SIZE);
+} // namespace tl2::internal

@@ -10,6 +10,9 @@ cc_library(
             "t_var.h",
             "types.h",
             "version_lock.h",
+            "log.h",
+            "state.h",
+            "memory.h"
             ],
     includes = ["."],
     visibility = ["//visibility:public"],

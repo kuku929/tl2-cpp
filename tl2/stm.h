@@ -1,47 +1,51 @@
 #pragma once
-#include "hash_table.h"
-#include "t_var.h" // for in_transaction
-#include "read_set.h"
-#include "write_set.h"
+#include "log.h"
+#include "state.h"
+#include "t_var.h"
+#include <cstring>
+namespace tl2 {
+using namespace tl2::internal;
 
+template <typename Transaction> inline void atomically(Transaction t);
+namespace internal {
+void commit(version_t write_version);
+bool try_commit(const version_t read_version);
 
-namespace STM {
-    static void commit(version_t write_version) {
-        for(const auto& op : write_set) {
-            *op.address = op.val;
-            hashtbl[op.address].unsafe_set_version(write_version);
-        }
+inline void commit(version_t write_version) {
+  for (auto op : log.writes()) {
+    std::memcpy(reinterpret_cast<void *>(op.addr()),
+                reinterpret_cast<void *>(op.val_addr()), op.bytes_size());
+  }
+}
+
+inline bool try_commit(const version_t read_version) {
+  auto guard = make_lock_guard(
+      log.writes().begin(), log.writes().end(),
+      [](const WriteOp &op) -> VersionLock & { return hashtbl[op.addr()]; });
+  const auto write_version = global_clock.incr_version();
+  if (write_version == read_version + 1) {
+    // no other thread has made changes commit
+    commit(write_version);
+    return true;
+  }
+  for (auto op : log.reads()) {
+    if (hashtbl[op.addr()].unsafe_get_version() > read_version) {
+      return false;
     }
-
-    static bool try_commit(const auto read_version) {
-        auto guard = make_lock_guard(write_set.begin(), write_set.end(), [](const auto& op) -> VersionLock& {
-            return hashtbl[op.address];
-        });
-        const auto write_version = global_clock.incr_version();
-        if(write_version == read_version + 1) {
-            // no other thread has made changes commit
-            commit(write_version);
-            return true;
-        }
-        for(const auto& op : read_set) {
-            if(hashtbl[std::get<addr_t>(op)].unsafe_get_version() > read_version) {
-                return false;
-            }
-        }
-        commit(write_version);
-        return true;
-    };
-
-    // need some machinery to deduce lambda return types and so on...
-    template<typename Transaction> static void atomically(Transaction t) {
-        while(true) {
-            const auto read_version = global_clock.get_version();
-            in_transaction = true;
-            read_set.clear();
-            write_set.clear();
-            t();
-            in_transaction = false;
-            if(try_commit(read_version)) break;
-        }
-    }
+  }
+  commit(write_version);
+  return true;
 };
+} // namespace internal
+// need some machinery to deduce lambda return types and so on...
+template <typename Transaction> 
+inline void atomically(Transaction t) {
+  while (true) {
+    const auto read_version = global_clock.get_version();
+    manager.start_transaction();
+    t();
+    if (try_commit(read_version))
+      break;
+  }
+}
+}; // namespace tl2

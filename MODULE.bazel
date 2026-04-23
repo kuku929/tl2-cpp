@@ -19,4 +19,12 @@ git_override(
     commit = "d72f9c8aea6817cdf1ca0ac10887f328de7f3da2"
 )
 
+bazel_dep(name = "bazel_clang_format", dev_dependency = True )
+git_override(
+    module_name = "bazel_clang_format",
+    remote = "https://github.com/oliverlee/bazel_clang_format.git",
+    commit = "bef146b4f2f7a4df652ab408473a6a5b10bbcc6f"
+)
+
 bazel_dep(name = "rules_cc", version = "0.2.17")
+
