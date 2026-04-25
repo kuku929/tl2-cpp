@@ -62,6 +62,11 @@ Refer to googletest [documentation](https://github.com/google/googletest/blob/ma
 - [ ] Log memory allocation and cleanup in case of abort
 - [ ] Add per-transaction buffers and synchronized pool resource
 	- [ ] Test which is better.
+- [ ] Graphs
+    - [ ] Shared Counter(KC already has a plot)
+    - [ ] Linked List(Varying reads/writes. See lecture 07)
+    - [ ] Queues
+    - [ ] KCAS
 - [x] Add a guard to VersionLock(to remove unsafe_get/set)
 - [x] Add support for arbitrary data types
 - [x] Testbench
