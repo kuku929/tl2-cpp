@@ -17,7 +17,7 @@ namespace tl2::internal {
 	public:
 		Log()
 		    : r(), w(), buf{} {
-			res = std::make_unique<std::pmr::monotonic_buffer_resource>(buf.data(), buf.size(), std::pmr::null_memory_resource());
+			res = make_transaction_resource(buf.data(), buf.size());
 			buf.fill(std::byte{0});
 		}
 		
@@ -66,7 +66,7 @@ namespace tl2::internal {
 			// reset memory resource so allocations are reclaimed for next transaction
 			res.reset();
 			buf.fill(std::byte{0});
-			res = std::make_unique<std::pmr::monotonic_buffer_resource>(buf.data(), buf.size(), std::pmr::null_memory_resource());
+			res = make_transaction_resource(buf.data(), buf.size());
 		}
 
 		WriteSetT& writes() {
@@ -84,6 +84,8 @@ namespace tl2::internal {
 		static constexpr std::size_t kBufSize = 4 * 1024;
 		std::array<std::byte, kBufSize> buf;
 		std::unique_ptr<std::pmr::monotonic_buffer_resource> res;
+		// unique_ptr because it lets you reset() and make_unique() a new resource 
+		// when clearing a transaction (what clear() does).
 	};
 	inline static thread_local Log<WriteOrderedSet, ReadOrderedSet> log;
 } // tl2::internal
