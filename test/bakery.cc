@@ -1,12 +1,13 @@
-#include "stm.h"
 #include <thread>
 #include <array>
 #include "tl2/tl2.h"
 #include <gtest/gtest.h>
 
+using namespace tl2;
+
 struct BakeryLock {
 public:
-    BakeryLock(int nthreads) : tickets(std::vector<TVar>(nthreads, 0u)) {;}
+    BakeryLock(int nthreads) : tickets(std::vector<TVar<uint>>(nthreads, 0u)) {;}
 
     bool conflict(uint id, uint ticket) {
         for(size_t id1 = 0; id1 < tickets.size(); ++id) {
@@ -34,7 +35,7 @@ public:
         });
     };
 private:
-    std::vector<TVar> tickets;
+    std::vector<TVar<uint>> tickets;
 };
 
 uint run(const uint niters) {
@@ -60,7 +61,7 @@ uint run(const uint niters) {
 }
 
 TEST(SimpleTests, PetersonLock) {
-    for(uint _ = 1; _ < 100'000; _ += 10'000) {
-        EXPECT_EQ(run(_), 2 * _);
+    for(uint i = 1; i < 100'000; i += 10'000) {
+        EXPECT_EQ(run(i), 2 * i);
     }
 }

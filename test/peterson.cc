@@ -1,4 +1,3 @@
-#include "stm.h"
 #include "tl2/tl2.h"
 #include <array>
 #include <gtest/gtest.h>
@@ -46,7 +45,7 @@ uint run(const uint niters) {
 }
 
 TEST(SimpleTests, PetersonLock) {
-  for (uint _ = 1; _ < 100'000; _ += 10'000) {
-    EXPECT_EQ(run(_), 2 * _);
+  for (uint i = 1; i < 100'000; i += 10'000) {
+    EXPECT_EQ(run(i), 2 * i);
   }
 }
