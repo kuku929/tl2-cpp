@@ -12,12 +12,12 @@
 
 namespace tl2::internal {
 	using namespace tl2::internal;
-	template<typename WriteSetT, typename ReadSetT>
+	template<typename WriteSetT, typename ReadSetT, AllocationStrategy AS = AllocationStrategy::SynchronizedPool>
 	class Log {
 	public:
 		Log()
 		    : r(), w(), buf{} {
-			res = std::make_unique<std::pmr::monotonic_buffer_resource>(buf.data(), buf.size(), std::pmr::null_memory_resource());
+			reset_resource();
 			buf.fill(std::byte{0});
 		}
 		
@@ -53,7 +53,7 @@ namespace tl2::internal {
 
 			// First write for this address in this transaction: stage a copied value.
 			const std::size_t nbytes = sizeof(T);
-			void* storage = res->allocate(nbytes, alignof(T));
+			void* storage = active_resource().allocate(nbytes, alignof(T));
 			std::memcpy(storage, reinterpret_cast<const void*>(&val), nbytes);
 			const T* copied_ptr = reinterpret_cast<const T*>(storage);
 			const WriteOp &op = { addr, copied_ptr };
@@ -64,9 +64,8 @@ namespace tl2::internal {
 			r.clear();
 			w.clear();
 			// reset memory resource so allocations are reclaimed for next transaction
-			res.reset();
 			buf.fill(std::byte{0});
-			res = std::make_unique<std::pmr::monotonic_buffer_resource>(buf.data(), buf.size(), std::pmr::null_memory_resource());
+			reset_resource();
 		}
 
 		WriteSetT& writes() {
@@ -78,12 +77,21 @@ namespace tl2::internal {
 		}
 
 	private:
+		std::pmr::memory_resource& active_resource() {
+			assert(resource_handle.resource != nullptr);
+			return *resource_handle.resource;
+		}
+
+		void reset_resource() {
+			resource_handle = make_log_resource<AS>(buf.data(), buf.size());
+		}
+
 		ReadSetT r;
 		WriteSetT w;
 		// per-transaction contiguous buffer and memory resource for write copies
 		static constexpr std::size_t kBufSize = 4 * 1024;
 		std::array<std::byte, kBufSize> buf;
-		std::unique_ptr<std::pmr::monotonic_buffer_resource> res;
+		LogResourceHandle resource_handle;
 	};
 	inline static thread_local Log<WriteOrderedSet, ReadOrderedSet> log;
 } // tl2::internal

@@ -32,7 +32,6 @@ jobs:
             common --announce_rc
             common --show_progress_rate_limit=10
             common --remote_download_minimal
-            common --lockfile_mode=error
             build --verbose_failures
             build --experimental_convenience_symlinks=ignore
             build --show_result=0
