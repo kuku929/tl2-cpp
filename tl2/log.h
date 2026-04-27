@@ -5,21 +5,26 @@
 #include "write_set.h"
 #include <cassert>
 #include <optional>
-#include <array>
+#include <memory>
 #include <memory_resource>
 #include <cstring>
 #include "memory.h"
 
 namespace tl2::internal {
 	using namespace tl2::internal;
-	template<typename WriteSetT, typename ReadSetT, AllocationStrategy AS = AllocationStrategy::SynchronizedPool>
+	template<typename WriteSetT, typename ReadSetT>
 	class Log {
 	public:
+		// Default: use per-log monotonic resource backed by default upstream allocation
 		Log()
-		    : r(), w(), buf{} {
-			reset_resource();
-			buf.fill(std::byte{0});
+			: r(), w() {
+			owned_resource = std::make_unique<std::pmr::monotonic_buffer_resource>();
+			resource = owned_resource.get();
 		}
+
+		// Use an externally provided memory resource (synchronized_pool_resource)
+		explicit Log(std::pmr::memory_resource* external_resource)
+			: r(), w(), resource(external_resource) {}
 		
 		template<typename T>
 		std::optional<T> value_at(const T* addr) const {
@@ -62,8 +67,12 @@ namespace tl2::internal {
 			r.clear();
 			w.clear();
 			// reset memory resource so allocations are reclaimed for next transaction
-			buf.fill(std::byte{0});
-			reset_resource();
+			// if we own the monotonic buffer, recreate it to reclaim
+			// if we use an external resource, what should I do?????
+			if (owned_resource) {
+				owned_resource = std::make_unique<std::pmr::monotonic_buffer_resource>();
+				resource = owned_resource.get();
+			}
 		}
 
 		WriteSetT& writes() {
@@ -76,20 +85,15 @@ namespace tl2::internal {
 
 	private:
 		std::pmr::memory_resource& active_resource() {
-			assert(resource_handle.resource != nullptr);
-			return *resource_handle.resource;
-		}
-
-		void reset_resource() {
-			resource_handle = make_log_resource<AS>(buf.data(), buf.size());
+			assert(resource != nullptr);
+			return *resource;
 		}
 
 		ReadSetT r;
 		WriteSetT w;
-		// per-transaction contiguous buffer and memory resource for write copies
-		static constexpr std::size_t kBufSize = 4 * 1024;
-		std::array<std::byte, kBufSize> buf;
-		LogResourceHandle resource_handle;
+		std::pmr::memory_resource* resource{nullptr};
+		std::unique_ptr<std::pmr::monotonic_buffer_resource> owned_resource;
 	};
 	inline static thread_local Log<WriteOrderedSet, ReadOrderedSet> log;
+	// inline static thread_local Log<WriteOrderedSet, ReadOrderedSet> log(&internal::synchronized_pool_resource);
 } // tl2::internal
