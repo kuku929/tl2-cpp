@@ -9,17 +9,17 @@ uint run(const uint niters) {
   std::thread t1([&]() {
     for (uint _ = 0; _ < niters; ++_) {
       atomically([&]() {
-          uint val = static_cast<uint>(counter);
-          counter = val + 1;
-        });
-      }
+        uint val = static_cast<uint>(counter);
+        counter = val + 1;
+      });
+    }
   });
   std::thread t2([&]() {
     for (uint _ = 0; _ < niters; ++_) {
       atomically([&]() {
-          uint val = static_cast<uint>(counter);
-          counter = val + 1;
-        });
+        uint val = static_cast<uint>(counter);
+        counter = val + 1;
+      });
     }
   });
   t1.join();

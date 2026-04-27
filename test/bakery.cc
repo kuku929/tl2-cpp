@@ -1,34 +1,35 @@
-#include <gtest/gtest.h>
-#include <array>
-#include <thread>
 #include "tl2/tl2.h"
+#include <array>
+#include <gtest/gtest.h>
+#include <thread>
 
 using namespace tl2;
 
 struct PetersonLock {
- public:
+public:
   PetersonLock() : flag({0, 0}), victim(0) { ; }
   void lock(uint id) {
     atomically([&]() {
       flag[id] = 1u;
       victim = id;
       while (static_cast<uint>(flag[1 - id]) == 1 and
-             static_cast<uint>(victim) == id) {}
+             static_cast<uint>(victim) == id) {
+      }
     });
   };
   void unlock(uint id) {
     atomically([&]() { flag[id] = 0; });
   };
 
- private:
+private:
   std::array<TVar<uint>, 2> flag;
   TVar<uint> victim;
 };
 
 struct BakeryLock {
- public:
-  explicit BakeryLock(size_t n) 
-    : choosing(n,TVar<bool>(false)), number(n,TVar<uint>(0)) {}
+public:
+  explicit BakeryLock(size_t n)
+      : choosing(n, TVar<bool>(false)), number(n, TVar<uint>(0)) {}
 
   void lock(uint id) {
     // Step 1: choosing[id] = true
@@ -86,7 +87,7 @@ struct BakeryLock {
     atomically([&]() { number[id] = 0; });
   }
 
- private:
+private:
   std::vector<TVar<bool>> choosing;
   std::vector<TVar<uint>> number;
 };
@@ -158,30 +159,30 @@ TEST(SimpleTests, BakeryLockMutualExclusion) {
 }
 
 TEST(SimpleTests, BakeryLockThreeThreads) {
-    BakeryLock l(3);
-    uint counter = 0;
-    const uint N = 4000;
+  BakeryLock l(3);
+  uint counter = 0;
+  const uint N = 4000;
 
-    auto worker = [&](uint id) {
-        for (uint i = 0; i < N; ++i) {
-            l.lock(id);
-            counter++;
-            l.unlock(id);
-        }
-    };
+  auto worker = [&](uint id) {
+    for (uint i = 0; i < N; ++i) {
+      l.lock(id);
+      counter++;
+      l.unlock(id);
+    }
+  };
 
-    std::thread t1(worker, 0);
-    std::thread t2(worker, 1);
-    std::thread t3(worker, 2);
+  std::thread t1(worker, 0);
+  std::thread t2(worker, 1);
+  std::thread t3(worker, 2);
 
-    t1.join();
-    t2.join();
-    t3.join();
+  t1.join();
+  t2.join();
+  t3.join();
 
-    EXPECT_EQ(counter, 3 * N);
+  EXPECT_EQ(counter, 3 * N);
 }
 
-//may expose livelock/slowdown
+// may expose livelock/slowdown
 TEST(SimpleTests, BakeryLockStress) {
   BakeryLock l(2);
   uint counter = 0;

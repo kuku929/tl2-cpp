@@ -12,7 +12,12 @@ class WriteSet;
 class WriteOp {
 public:
   WriteOp(addr_t a) : m_a(std::move(a)), m_val(0), m_sz(0) { ; }
-  template <typename T> WriteOp(const T *a, const T *v) : m_a(reinterpret_cast<addr_t>(a)), m_val(reinterpret_cast<addr_t>(v)), m_sz(sizeof(T)) { ; }
+  template <typename T>
+  WriteOp(const T *a, const T *v)
+      : m_a(reinterpret_cast<addr_t>(a)), m_val(reinterpret_cast<addr_t>(v)),
+        m_sz(sizeof(T)) {
+    ;
+  }
   addr_t addr() const { return m_a; }
 
   template <typename T> const T value() const {

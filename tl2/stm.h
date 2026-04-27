@@ -19,18 +19,18 @@ inline void commit(version_t write_version) {
   }
 }
 
-inline bool try_commit(const version_t read_version) {
+inline bool try_commit() {
   auto guard = make_lock_guard(
       log.writes().begin(), log.writes().end(),
       [](const WriteOp &op) -> VersionLock & { return hashtbl[op.addr()]; });
   const auto write_version = global_clock.incr_version();
-  if (write_version == read_version + 1) {
+  if (write_version == manager.read_version() + 1) {
     // no other thread has made changes commit
     commit(write_version);
     return true;
   }
   for (auto op : log.reads()) {
-    if (hashtbl[op.addr()].unsafe_get_version() > read_version) {
+    if (hashtbl[op.addr()].unsafe_get_version() > manager.read_version()) {
       return false;
     }
   }
@@ -39,13 +39,11 @@ inline bool try_commit(const version_t read_version) {
 };
 } // namespace internal
 // need some machinery to deduce lambda return types and so on...
-template <typename Transaction> 
-inline void atomically(Transaction t) {
+template <typename Transaction> inline void atomically(Transaction t) {
   while (true) {
-    const auto read_version = global_clock.get_version();
     manager.start_transaction();
     t();
-    if (try_commit(read_version))
+    if (try_commit())
       break;
   }
 }

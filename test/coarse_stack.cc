@@ -1,136 +1,137 @@
 #include "stm.h"
 #include "tl2/tl2.h"
-#include <optional>
 #include <gtest/gtest.h>
+#include <optional>
 
 /*
 NOTE: We are not freeing the nodes which are popped. It can lead to memory leak!
 It's acceptable since this is just for testing STM
 */
 
-template <typename T>
-class StackSTM {
+template <typename T> class StackSTM {
 private:
-    struct Node {
-        T value;
-        Node* next;
+  struct Node {
+    T value;
+    Node *next;
 
-        Node(T v, Node* n) : value(v), next(n) {}
-    };
+    Node(T v, Node *n) : value(v), next(n) {}
+  };
 
-    tl2::TVar<Node*> top;
+  tl2::TVar<Node *> top;
 
 public:
-    StackSTM() : top(nullptr) {}
+  StackSTM() : top(nullptr) {}
 
-    void push(const T& x) {
-        tl2::atomically([&]() {
-            Node* old_top = static_cast<Node*>(top);
-            Node* node = new Node(x, old_top);
-            top = node;
-        });
-    }
+  void push(const T &x) {
+    tl2::atomically([&]() {
+      Node *old_top = static_cast<Node *>(top);
+      Node *node = new Node(x, old_top);
+      top = node;
+    });
+  }
 
-    std::optional<T> try_pop() {
-        std::optional<T> result = std::nullopt;
+  std::optional<T> try_pop() {
+    std::optional<T> result = std::nullopt;
 
-        tl2::atomically([&]() {
-            Node* old_top = static_cast<Node*>(top);
+    tl2::atomically([&]() {
+      Node *old_top = static_cast<Node *>(top);
 
-            if (old_top == nullptr) {
-                result = std::nullopt;
-                return;
-            }
+      if (old_top == nullptr) {
+        result = std::nullopt;
+        return;
+      }
 
-            result = old_top->value;
-            top = old_top->next;
-        });
+      result = old_top->value;
+      top = old_top->next;
+    });
 
-        return result;
-    }
+    return result;
+  }
 
-    bool empty() {
-        bool is_empty = false;
+  bool empty() {
+    bool is_empty = false;
 
-        tl2::atomically([&]() {
-            is_empty = (static_cast<Node*>(top) == nullptr);
-        });
+    tl2::atomically(
+        [&]() { is_empty = (static_cast<Node *>(top) == nullptr); });
 
-        return is_empty;
-    }
+    return is_empty;
+  }
 };
 
-//test 1: testing basic functionality
+// test 1: testing basic functionality
 TEST(StackSTM, BasicPushPop) {
-    StackSTM<int> s;
+  StackSTM<int> s;
 
-    s.push(10);
-    s.push(20);
+  s.push(10);
+  s.push(20);
 
-    auto x = s.try_pop();
-    ASSERT_TRUE(x.has_value());
-    EXPECT_EQ(*x, 20);
+  auto x = s.try_pop();
+  ASSERT_TRUE(x.has_value());
+  EXPECT_EQ(*x, 20);
 
-    x = s.try_pop();
-    ASSERT_TRUE(x.has_value());
-    EXPECT_EQ(*x, 10);
+  x = s.try_pop();
+  ASSERT_TRUE(x.has_value());
+  EXPECT_EQ(*x, 10);
 }
 
-//test 2: empty behaviour
+// test 2: empty behaviour
 TEST(StackSTM, EmptyPop) {
-    StackSTM<int> s;
+  StackSTM<int> s;
 
-    auto x = s.try_pop();
-    EXPECT_FALSE(x.has_value());
+  auto x = s.try_pop();
+  EXPECT_FALSE(x.has_value());
 }
 
-//test 3: concurrent push
+// test 3: concurrent push
 TEST(StackSTM, ConcurrentPush) {
-    StackSTM<int> s;
-    const int N = 5000;
+  StackSTM<int> s;
+  const int N = 5000;
 
-    std::thread t1([&]() {
-        for (int i = 0; i < N; i++) s.push(i);
-    });
+  std::thread t1([&]() {
+    for (int i = 0; i < N; i++)
+      s.push(i);
+  });
 
-    std::thread t2([&]() {
-        for (int i = N; i < 2*N; i++) s.push(i);
-    });
+  std::thread t2([&]() {
+    for (int i = N; i < 2 * N; i++)
+      s.push(i);
+  });
 
-    t1.join();
-    t2.join();
+  t1.join();
+  t2.join();
 
-    int count = 0;
-    while (s.try_pop()) count++;
+  int count = 0;
+  while (s.try_pop())
+    count++;
 
-    EXPECT_EQ(count, 2 * N);
+  EXPECT_EQ(count, 2 * N);
 }
 
-//test 4: push/pop race
+// test 4: push/pop race
 TEST(StackSTM, PushPopRace) {
-    StackSTM<int> s;
-    const int N = 5000;
+  StackSTM<int> s;
+  const int N = 5000;
 
-    std::atomic<int> pushed{0};
-    std::atomic<int> popped{0};
+  std::atomic<int> pushed{0};
+  std::atomic<int> popped{0};
 
-    std::thread t1([&]() {
-        for (int i = 0; i < N; i++) {
-            s.push(i);
-            pushed++;
-        }
-    });
+  std::thread t1([&]() {
+    for (int i = 0; i < N; i++) {
+      s.push(i);
+      pushed++;
+    }
+  });
 
-    std::thread t2([&]() {
-        for (int i = 0; i < N; i++) {
-            auto x = s.try_pop();
-            if (x) popped++;
-        }
-    });
+  std::thread t2([&]() {
+    for (int i = 0; i < N; i++) {
+      auto x = s.try_pop();
+      if (x)
+        popped++;
+    }
+  });
 
-    t1.join();
-    t2.join();
+  t1.join();
+  t2.join();
 
-    EXPECT_LE(popped.load(), pushed.load());
+  EXPECT_LE(popped.load(), pushed.load());
 }
-

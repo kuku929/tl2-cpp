@@ -10,6 +10,14 @@ bazel build //src:<name-of-target>
 ```
 Documentation for [MODULE.bazel](https://bazel.build/external/overview)
 
+## On making changes
+make sure to run the following two commands:
+```bash
+bazel build //... --config=clang-format-fix
+bazel build //test/... --config=clang-format-fix
+```
+BEFORE pushing any code.
+
 ## On Tests
 
 ### Running

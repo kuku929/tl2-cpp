@@ -24,7 +24,7 @@ public:
     return m_data;
   }
 
-  TVar& operator=(const T &val) {
+  TVar &operator=(const T &val) {
     manager.assert_in_transaction();
     if (&val == &m_data)
       return *this;

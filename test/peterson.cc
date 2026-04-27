@@ -10,7 +10,9 @@ public:
     atomically([&]() {
       flag[id] = 1u;
       victim = id;
-      while (static_cast<uint>(flag[1 - id]) == 1 and static_cast<uint>(victim) == id) {}
+      while (static_cast<uint>(flag[1 - id]) == 1 and
+             static_cast<uint>(victim) == id) {
+      }
     });
   };
   void unlock(uint id) {

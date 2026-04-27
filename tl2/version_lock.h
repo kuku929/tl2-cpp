@@ -74,6 +74,37 @@ private:
   static constexpr version_t unpack_version(version_t s) { return s >> 1; }
 
   std::atomic<version_t> m_state{0};
+};
+
+template <std::size_t N> struct Pad {
+  char data[N];
+};
+template <> struct Pad<0> {};
+
+#if defined(__GCC_DESTRUCTIVE_SIZE)
+static constexpr std::size_t CACHE_LINE_SIZE = __GCC_DESTRUCTIVE_SIZE;
+#elif defined(__cpp_lib_hardware_interference_size)
+static constexpr std::size_t CACHE_LINE_SIZE =
+    std::hardware_destructive_interference_size;
+#else
+static constexpr std::size_t CACHE_LINE_SIZE = 64;
+#endif
+
+static constexpr std::size_t lock_size = sizeof(VersionLock);
+#if __cpp_static_assert >= 202306L
+static_assert(lock_size <= CACHE_LINE_SIZE,
+              "Lock object does not fit in cache!");
+#else
+static_assert(lock_size <= CACHE_LINE_SIZE);
+#endif
+static constexpr std::size_t pad_size =
+    (CACHE_LINE_SIZE - (lock_size % CACHE_LINE_SIZE)) % CACHE_LINE_SIZE;
+
+class alignas(CACHE_LINE_SIZE) PaddedVersionLock : public VersionLock {
+public:
+  using VersionLock::VersionLock;
+private:
+  Pad<pad_size> pad;
 } static global_clock;
 
 template <typename It, typename LockSelector> class LockGuard {

@@ -1,152 +1,149 @@
-#include <thread>
-#include <vector>
+#include "tl2/tl2.h"
+#include <gtest/gtest.h>
+#include <mutex> //used for tests
 #include <optional>
 #include <set>
-#include <mutex> //used for tests
-#include <gtest/gtest.h>
-#include "tl2/tl2.h"
+#include <thread>
+#include <vector>
 
 using namespace tl2;
 
-template <typename T>
-struct BoundedQueue{
+template <typename T> struct BoundedQueue {
 public:
-    BoundedQueue(size_t cap) 
-      : _capacity(cap),
-        items(cap,TVar<T>(T())),
-        head(0),
-        tail(0) {}
+  BoundedQueue(size_t cap)
+      : _capacity(cap), items(cap, TVar<T>(T())), head(0), tail(0) {}
 
-    bool try_enq(const T& x){
-        bool success=false;
+  bool try_enq(const T &x) {
+    bool success = false;
 
-        tl2::atomically([&]() {
-            size_t h = static_cast<size_t>(head);
-            size_t t = static_cast<size_t>(tail);
+    tl2::atomically([&]() {
+      size_t h = static_cast<size_t>(head);
+      size_t t = static_cast<size_t>(tail);
 
-            if (t - h == _capacity) {
-                success = false;
-                return;
-            }
+      if (t - h == _capacity) {
+        success = false;
+        return;
+      }
 
-            items[t % _capacity] = x;
-            tail = t + 1;
-            success = true;
-        });
+      items[t % _capacity] = x;
+      tail = t + 1;
+      success = true;
+    });
 
-        return success;
-    }
+    return success;
+  }
 
-    //returns std::nullopt if the queue is empty
-    std::optional<T> try_deq() {
-        std::optional<T> result = std::nullopt;
+  // returns std::nullopt if the queue is empty
+  std::optional<T> try_deq() {
+    std::optional<T> result = std::nullopt;
 
-        tl2::atomically([&]() {
-            size_t h = static_cast<size_t>(head);
-            size_t t = static_cast<size_t>(tail);
+    tl2::atomically([&]() {
+      size_t h = static_cast<size_t>(head);
+      size_t t = static_cast<size_t>(tail);
 
+      if (t == h) {
+        result = std::nullopt;
+        return;
+      }
 
-            if (t == h) {
-                result = std::nullopt;
-                return;
-            }
+      result = static_cast<T>(items[h % _capacity]);
+      head = h + 1;
+    });
 
-            result = static_cast<T>(items[h % _capacity]);
-            head = h + 1;
-        });
+    return result;
+  }
 
-        return result;
-    }
+  size_t capacity() const { return _capacity; }
 
-    size_t capacity() const{
-        return _capacity;
-    }
-
-    size_t size() const{
-        size_t size;
-        tl2::atomically([&](){
-            size = static_cast<size_t>(tail) - static_cast<size_t>(head);
-        });
-        return size;
-    }
+  size_t size() const {
+    size_t size;
+    tl2::atomically([&]() {
+      size = static_cast<size_t>(tail) - static_cast<size_t>(head);
+    });
+    return size;
+  }
 
 private:
-    const size_t _capacity;
-    std::vector<TVar<T>> items;
-    TVar<size_t> head,tail;
+  const size_t _capacity;
+  std::vector<TVar<T>> items;
+  TVar<size_t> head, tail;
 };
 
-//testing the basic functionality of the queue
-//enqueue two values and then dequeue them
+// testing the basic functionality of the queue
+// enqueue two values and then dequeue them
 TEST(BoundedQueue, EnqueueDequeueSingle) {
-    BoundedQueue<int> q(5);
+  BoundedQueue<int> q(5);
 
-    EXPECT_TRUE(q.try_enq(10));
-    EXPECT_TRUE(q.try_enq(20));
+  EXPECT_TRUE(q.try_enq(10));
+  EXPECT_TRUE(q.try_enq(20));
 
-    auto x = q.try_deq();
-    ASSERT_TRUE(x.has_value());
-    EXPECT_EQ(*x, 10);
+  auto x = q.try_deq();
+  ASSERT_TRUE(x.has_value());
+  EXPECT_EQ(*x, 10);
 
-    x = q.try_deq();
-    ASSERT_TRUE(x.has_value());
-    EXPECT_EQ(*x, 20);
+  x = q.try_deq();
+  ASSERT_TRUE(x.has_value());
+  EXPECT_EQ(*x, 20);
 }
 
-//concurrent access test
+// concurrent access test
 TEST(BoundedQueue, ConcurrentProducerConsumer) {
-    BoundedQueue<int> q(1000);
-    constexpr int N = 1000;
+  BoundedQueue<int> q(1000);
+  constexpr int N = 1000;
 
-    std::thread producer([&]() {
-        for (int i = 0; i < N; i++) {
-            while (!q.try_enq(i)) {}
-        }
-    });
+  std::thread producer([&]() {
+    for (int i = 0; i < N; i++) {
+      while (!q.try_enq(i)) {
+      }
+    }
+  });
 
-    std::thread consumer([&]() {
-        for (int i = 0; i < N; i++) {
-            std::optional<int> x;
-            while (!(x = q.try_deq())) {}
-        }
-    });
+  std::thread consumer([&]() {
+    for (int i = 0; i < N; i++) {
+      std::optional<int> x;
+      while (!(x = q.try_deq())) {
+      }
+    }
+  });
 
-    producer.join();
-    consumer.join();
+  producer.join();
+  consumer.join();
 
-    auto x = q.try_deq();
-    EXPECT_FALSE(x.has_value());
+  auto x = q.try_deq();
+  EXPECT_FALSE(x.has_value());
 }
 
-//no lost elements
+// no lost elements
 TEST(BoundedQueue, NoLostElements) {
-    const int N = 10000;
-    BoundedQueue<int> q(N);
+  const int N = 10000;
+  BoundedQueue<int> q(N);
 
-    std::vector<bool> seen(N + 1, false);
+  std::vector<bool> seen(N + 1, false);
 
-    std::thread producer([&]() {
-        for (int i = 1; i <= N; i++) {
-            while (!q.try_enq(i)) {}
-        }
-    });
-
-    std::thread consumer([&]() {
-        for (size_t i = 0; i < N; i++) {
-            std::optional<size_t> x;
-            while (!(x = q.try_deq())) {}
-
-            ASSERT_TRUE(*x >= 1 && *x <= N);
-            seen[*x] = true;
-        }
-    });
-
-    producer.join();
-    consumer.join();
-
-    for (size_t i = 1; i <= N; i++) {
-        EXPECT_TRUE(seen[i]);
+  std::thread producer([&]() {
+    for (int i = 1; i <= N; i++) {
+      while (!q.try_enq(i)) {
+      }
     }
+  });
+
+  std::thread consumer([&]() {
+    for (size_t i = 0; i < N; i++) {
+      std::optional<size_t> x;
+      while (!(x = q.try_deq())) {
+      }
+
+      ASSERT_TRUE(*x >= 1 && *x <= N);
+      seen[*x] = true;
+    }
+  });
+
+  producer.join();
+  consumer.join();
+
+  for (size_t i = 1; i <= N; i++) {
+    EXPECT_TRUE(seen[i]);
+  }
 }
 
 // //no duplicates
