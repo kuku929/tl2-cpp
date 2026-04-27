@@ -24,12 +24,15 @@ static constexpr std::size_t CACHE_LINE_SIZE = 64;
 
 class LockTable {
 private:
-  static constexpr std::size_t CACHE_LINE = CACHE_LINE_SIZE;
-
   static constexpr std::size_t lock_size = sizeof(VersionLock);
-  static constexpr std::size_t pad_size = (CACHE_LINE - (lock_size % CACHE_LINE)) % CACHE_LINE;
+#if __cpp_static_assert >= 202306L
+  static_assert(lock_size <= CACHE_LINE_SIZE, "Lock object does not fit in cache!");
+#else 
+  static_assert(lock_size <= CACHE_LINE_SIZE);
+#endif
+  static constexpr std::size_t pad_size = (CACHE_LINE_SIZE - (lock_size % CACHE_LINE_SIZE)) % CACHE_LINE_SIZE;
 
-  struct alignas(CACHE_LINE) PaddedVersionLock {
+  struct alignas(CACHE_LINE_SIZE) PaddedVersionLock {
     VersionLock lock;
     Pad<pad_size> pad;
   };
@@ -43,8 +46,7 @@ public:
 
   // maps address to version lock (hashing)
   inline VersionLock &operator[](const addr_t addr) {
-    const auto x = reinterpret_cast<uintptr_t>(addr);
-    size_t index = (x >> 2) & mask;
+    size_t index = (addr >> 2) & mask;
     return table[index].lock;
   }
 } static hashtbl(LOCKTABLE_SIZE);

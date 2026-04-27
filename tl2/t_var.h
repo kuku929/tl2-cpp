@@ -17,14 +17,11 @@ public:
 
   explicit operator T() const {
     manager.assert_in_transaction();
-    const T *address = &m_data;
-    // NOTE: can we prevent copying here?
-    T val = m_data;
+    log.append_read(&m_data);
     std::optional<T> entry;
-    if ((entry = log.value_at(address)).has_value())
-      val = entry.value();
-    log.append_read(address);
-    return val;
+    if ((entry = log.value_at(&m_data)).has_value())
+      return entry.value();
+    return m_data;
   }
 
   TVar& operator=(const T &val) {
