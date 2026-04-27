@@ -21,8 +21,8 @@ public:
         bool success=false;
 
         tl2::atomically([&]() {
-            size_t h = (size_t)head;
-            size_t t = (size_t)tail;
+            size_t h = static_cast<size_t>(head);
+            size_t t = static_cast<size_t>(tail);
 
             if (t - h == _capacity) {
                 success = false;
@@ -42,15 +42,16 @@ public:
         std::optional<T> result = std::nullopt;
 
         tl2::atomically([&]() {
-            size_t h = (size_t)head;
-            size_t t = (size_t)tail;
+            size_t h = static_cast<size_t>(head);
+            size_t t = static_cast<size_t>(tail);
+
 
             if (t == h) {
                 result = std::nullopt;
                 return;
             }
 
-            result = (T)items[h % _capacity];
+            result = static_cast<T>(items[h % _capacity]);
             head = h + 1;
         });
 
@@ -64,7 +65,7 @@ public:
     size_t size() const{
         size_t size;
         tl2::atomically([&](){
-            size = (size_t)tail - (size_t)head;
+            size = static_cast<size_t>(tail) - static_cast<size_t>(head);
         });
         return size;
     }
@@ -131,8 +132,8 @@ TEST(BoundedQueue, NoLostElements) {
     });
 
     std::thread consumer([&]() {
-        for (int i = 0; i < N; i++) {
-            std::optional<int> x;
+        for (size_t i = 0; i < N; i++) {
+            std::optional<size_t> x;
             while (!(x = q.try_deq())) {}
 
             ASSERT_TRUE(*x >= 1 && *x <= N);
@@ -143,7 +144,7 @@ TEST(BoundedQueue, NoLostElements) {
     producer.join();
     consumer.join();
 
-    for (int i = 1; i <= N; i++) {
+    for (size_t i = 1; i <= N; i++) {
         EXPECT_TRUE(seen[i]);
     }
 }

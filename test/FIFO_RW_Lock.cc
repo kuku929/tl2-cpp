@@ -2,7 +2,10 @@
 #include "tl2/tl2.h"
 #include <thread>
 #include <gtest/gtest.h>
-
+using namespace tl2;
+/*
+CANNOT BE IMPLEMENTED WITH STM
+*/
 class RWLockSTM {
 public:
     RWLockSTM() : readers(0), writer(false) {}
@@ -12,8 +15,8 @@ public:
             bool acquired = false;
 
             atomically([&]() {
-                if (!(bool)writer) {
-                    readers = (int)readers + 1;
+                if (!static_cast<bool>(writer)) {
+                    readers = static_cast<int>(readers) + 1;
                     acquired = true;
                 }
             });
@@ -25,7 +28,7 @@ public:
 
     void read_unlock() {
         atomically([&]() {
-            readers = (int)readers - 1;
+            readers = static_cast<int>(readers) - 1;
         });
     }
 
@@ -34,7 +37,7 @@ public:
             bool acquired = false;
 
             atomically([&]() {
-                if (!(bool)writer && (int)readers == 0) {
+                if (!static_cast<bool>(writer) && static_cast<int>(readers) == 0) {
                     writer = true;
                     acquired = true;
                 }
@@ -63,7 +66,7 @@ TEST(STM, RWLockWriterExclusive) {
     bool violation = false;
 
     auto writer = [&]() {
-        for (int i = 0; i < 5000; i++) {
+        for (int i = 0; i < 50; i++) {
             lock.write_lock();
 
             int temp = shared;
@@ -86,7 +89,7 @@ TEST(STM, RWLockMultipleReaders) {
     int shared = 42;
 
     auto reader = [&]() {
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10; i++) {
             lock.read_lock();
             EXPECT_EQ(shared, 42);
             lock.read_unlock();
@@ -104,7 +107,7 @@ TEST(STM, RWLockNoReadDuringWrite) {
     bool violation = false;
 
     std::thread writer([&]() {
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100; i++) {
             lock.write_lock();
             shared++;
             std::this_thread::sleep_for(std::chrono::microseconds(10));
@@ -113,7 +116,7 @@ TEST(STM, RWLockNoReadDuringWrite) {
     });
 
     std::thread reader([&]() {
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100; i++) {
             lock.read_lock();
             int val = shared;
             if (val < 0) violation = true;

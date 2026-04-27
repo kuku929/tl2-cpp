@@ -7,23 +7,23 @@ using namespace tl2;
 
 class ALock {
 public:
-    explicit ALock(int capacity)
-        : capacity(capacity),
-          flags(capacity),
-          tail(0) {
-
-        // initialize flags
-        for (int i = 0; i < capacity; i++) {
-            flags[i] = (i == 0); // only slot 0 is true
-        }
+    explicit ALock(size_t cap)
+        : capacity(cap),
+          flags(cap,TVar<bool>(false)),
+          tail(0) 
+    {
+        //only slot 0 is true
+        atomically([&]() {
+            flags[0]=true;
+        });
     }
 
     void lock() {
-        int slot;
+        size_t slot;
 
         // get slot atomically via STM
         atomically([&]() {
-            int t = (int)tail;
+            size_t t = static_cast<size_t>(tail);
             slot = t % capacity;
             tail = t + 1;
         });
@@ -35,7 +35,7 @@ public:
             bool ready;
 
             atomically([&]() {
-                ready = (bool)flags[slot];
+                ready = static_cast<bool>(flags[slot]);
             });
 
             if (ready) break;
@@ -45,7 +45,7 @@ public:
     }
 
     void unlock() {
-        int slot = my_slot;
+        size_t slot = my_slot;
 
         atomically([&]() {
             flags[slot] = false;
@@ -54,15 +54,15 @@ public:
     }
 
 private:
-    int capacity;
+    size_t capacity;
     std::vector<TVar<bool>> flags;
-    TVar<int> tail;
+    TVar<size_t> tail;
 
-    static thread_local int my_slot;
+    static thread_local size_t my_slot;
 };
 
 // thread-local storage
-thread_local int ALock::my_slot = -1;
+thread_local size_t ALock::my_slot = 0;
 
 TEST(ALockSTM, MutualExclusion) {
     ALock lock(8);

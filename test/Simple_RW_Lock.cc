@@ -5,6 +5,10 @@
 
 using namespace tl2;
 
+/*
+CANNOT BE IMPLEMENTED WITH STM
+*/
+
 class RWLockSTM {
 public:
     RWLockSTM() : readers(0), writer(false) {}
@@ -14,8 +18,8 @@ public:
             bool acquired = false;
 
             atomically([&]() {
-                if (!(bool)writer) {
-                    readers = (int)readers + 1;
+                if (!static_cast<bool>(writer)) {
+                    readers = static_cast<int>(readers)+ 1;
                     acquired = true;
                 }
             });
@@ -27,7 +31,7 @@ public:
 
     void read_unlock() {
         atomically([&]() {
-            readers = (int)readers - 1;
+            readers = static_cast<int>(readers) - 1;
         });
     }
 
@@ -36,7 +40,7 @@ public:
             bool acquired = false;
 
             atomically([&]() {
-                if (!(bool)writer && (int)readers == 0) {
+                if (!static_cast<bool>(writer) && static_cast<int>(readers) == 0) {
                     writer = true;
                     acquired = true;
                 }
