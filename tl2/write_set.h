@@ -31,13 +31,12 @@ private:
 
 class WriteSet {
 public:
-  virtual void insert(const WriteOp &op) = 0;
-  virtual void modify(const WriteOp &op) = 0;
+  virtual void update(const WriteOp &op) = 0;
   virtual std::optional<addr_t> find_opt(const WriteOp &op) const = 0;
   std::optional<addr_t> find_opt(const WriteOp &&op) const {
     return find_opt(op);
   }
-  virtual bool contains(const WriteOp &op) = 0;
+
 };
 
 class WriteSetCompare {
@@ -59,17 +58,14 @@ public:
     return std::optional(itr->val_addr());
   }
 
-  void insert(const WriteOp &op) override { Set::insert(op); }
-
-  void modify(const WriteOp &op) override {
-    // modify is called when address is already
-    // present. No speedup right now.
-    erase(op);
-    insert(op);
-  }
-
-  bool contains(const WriteOp &op) override {
-    return Set::contains(op);
+  void update(const WriteOp &op) override {
+    const auto itr = Set::find(op);
+    if (itr == end()) {
+      Set::insert(op);
+    } else {
+      Set::erase(itr);
+      Set::insert(op);
+    }
   }
 };
 } // namespace tl2::internal

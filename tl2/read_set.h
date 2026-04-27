@@ -19,9 +19,7 @@ private:
 class ReadSet {
 public:
   virtual void clear() = 0;
-  virtual void insert(const ReadOp &op) = 0;
-  virtual void modify(const ReadOp &op) = 0;
-  virtual bool contains(const ReadOp &op) = 0;
+  virtual void update(const ReadOp &op) = 0;
 };
 
 class ReadSetCompare {
@@ -36,17 +34,14 @@ public:
   ReadOrderedSet() : Set(), ReadSet() {}
   void clear() override { Set::clear(); }
 
-  void insert(const ReadOp &op) override { Set::insert(op); }
-
-  void modify(const ReadOp &op) override {
-    // modify is called when address is already
-    // present. No speedup right now.
-    Set::erase(op);
-    Set::insert(op);
-  }
-
-  bool contains(const ReadOp &op) override {
-    return Set::contains(op);
+  void update(const ReadOp &op) override {
+    const auto itr = Set::find(op);
+    if (itr == end()) {
+      Set::insert(op);
+    } else {
+      Set::erase(itr);
+      Set::insert(op);
+    }
   }
 };
 } // namespace tl2::internal

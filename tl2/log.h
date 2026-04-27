@@ -35,9 +35,7 @@ namespace tl2::internal {
 		void append_read(const T* addr) {
 			const addr_t a = reinterpret_cast<addr_t>(addr);
 			const ReadOp &op = { a, hashtbl[a].get_version() };
-			if(r.contains(op))
-				r.modify(op);
-			else r.insert(op);
+			r.update(op);
 		}
 
 		template<typename T>
@@ -57,7 +55,7 @@ namespace tl2::internal {
 			std::memcpy(storage, reinterpret_cast<const void*>(&val), nbytes);
 			const T* copied_ptr = reinterpret_cast<const T*>(storage);
 			const WriteOp &op = { addr, copied_ptr };
-			w.insert(op);
+			w.update(op);
 		}
 
 		void clear() {
