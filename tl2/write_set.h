@@ -41,7 +41,6 @@ public:
   std::optional<addr_t> find_opt(const WriteOp &&op) const {
     return find_opt(op);
   }
-
 };
 
 class WriteSetCompare {

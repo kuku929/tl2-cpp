@@ -103,6 +103,7 @@ static constexpr std::size_t pad_size =
 class alignas(CACHE_LINE_SIZE) PaddedVersionLock : public VersionLock {
 public:
   using VersionLock::VersionLock;
+
 private:
   Pad<pad_size> pad;
 } static global_clock;

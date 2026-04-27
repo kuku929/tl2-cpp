@@ -30,9 +30,7 @@ public:
     context.rv = global_clock.get_version();
   }
 
-  inline version_t read_version() {
-    return context.rv;
-  }
+  inline version_t read_version() { return context.rv; }
 
   void assert_in_transaction() {
     if (context.state != STATE::RUNNING) {
@@ -47,7 +45,10 @@ private:
   public:
     STATE state;
     version_t rv;
-    void clear() { state = STATE::ZOMBIE; rv = static_cast<version_t>(0); }
+    void clear() {
+      state = STATE::ZOMBIE;
+      rv = static_cast<version_t>(0);
+    }
   } context;
 } inline static thread_local manager;
 } // namespace tl2::internal
