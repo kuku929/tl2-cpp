@@ -12,9 +12,10 @@ cc_library(
             "version_lock.h",
             "log.h",
             "state.h",
-            "memory.h"
+            "memory.h",
+            "function.h"
             ],
     includes = ["."],
     deps = ["@unordered_dense//:unordered_dense"],
-    visibility = ["//visibility:public"],
+    visibility = ["//visibility:public"]
 )

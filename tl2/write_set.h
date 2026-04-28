@@ -2,7 +2,7 @@
 #include "types.h"
 #include <algorithm>
 #include <cstddef>
-#include <functional>
+#include "function.h"
 #include <memory>
 #include <optional>
 #include <set>
@@ -53,8 +53,8 @@ public:
 private:
   addr_t m_a;
   addr_t m_val;
-  std::function<void(addr_t)> m_destructor;
-  std::function<void(addr_t, addr_t)> m_move;
+  func::function<void(addr_t)> m_destructor;
+  func::function<void(addr_t, addr_t)> m_move;
   std::size_t m_sz;
 };
 
