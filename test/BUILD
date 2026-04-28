@@ -20,7 +20,7 @@ cc_test(
     ],
 )
 cc_test(
-    name = "Alock",
+    name = "a_lock",
     size = "small",
     srcs = ["Alock.cc"],
     deps = [
