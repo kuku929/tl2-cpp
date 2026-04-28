@@ -33,7 +33,7 @@ void benchmark(int threads, int ops_per_thread) {
     auto end = chrono::high_resolution_clock::now();
 
     double sec = chrono::duration<double>(end - start).count();
-    double total_ops = (double)threads * ops_per_thread;
+    double total_ops = static_cast<double>(threads) * ops_per_thread;
 
     cout << threads << "," << fixed << (total_ops / sec) << endl;
 }

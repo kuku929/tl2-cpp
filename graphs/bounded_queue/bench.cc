@@ -35,3 +35,20 @@ void benchmark_batch(int threads, int ops) {
     cout << threads << "," << (threads * ops / sec) << endl;
 }
 
+int main() {
+    // number of operations per thread
+    int ops = 100000;
+
+    // thread counts you want to benchmark
+    vector<int> thread_counts = {1, 2, 4, 8};
+
+    // CSV header (useful for plotting later)
+    cout << "threads,throughput" << endl;
+
+    for (int t : thread_counts) {
+        benchmark_batch(t, ops);
+    }
+
+    return 0;
+}
+

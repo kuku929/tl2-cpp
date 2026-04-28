@@ -31,7 +31,7 @@ public:
         Node* node = new Node(x);   // ✅ OUTSIDE transaction
 
         atomically([&]() {
-            Node* t = (Node*)tail;
+            Node* t = static_cast<Node*>(tail);
             t->next = node;
             tail = node;
         });
@@ -42,8 +42,8 @@ public:
         std::optional<T> result = std::nullopt;
 
         atomically([&]() {
-            Node* h = (Node*)head;
-            Node* next = (Node*)h->next;
+            Node* h = static_cast<Node*>(head);
+            Node* next = static_cast<Node*>(h->next);
 
             if (next == nullptr) {
                 result = std::nullopt;

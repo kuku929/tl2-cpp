@@ -18,7 +18,7 @@ void benchmark(int threads, int iters) {
         ts.emplace_back([&]() {
             for (int i = 0; i < iters; i++) {
                 atomically([&]() {
-                    int v = (int)counter;
+                    int v = static_cast<int>(counter);
                     for (int k = 0; k < 1000; k++)
                         v++;
                     counter = v;

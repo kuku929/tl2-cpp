@@ -42,29 +42,29 @@ Refer to googletest [documentation](https://github.com/google/googletest/blob/ma
 			- Hashmap to keep address and their values.
 			- vector for fast insert(NEED TO SORT AT THE END TO PREVENT DEADLOCK).
 - [ ] Add more tests
-	- [ ] Lecture 02
-		- [ ] Bakery
+	- [x] Lecture 02
+		- [x] Bakery
 		- [x] Peterson
 		- [x] Counter
-	- [ ] Lecture 03
-		- [ ] Bounded Queue
-		- [ ] Lockfree Queue
-	- [ ] Lecture 05
-		- [ ] Array Lock
-		- [ ] Backoff Lock
+	- [x] Lecture 03
+		- [x] Bounded Queue
+		- [x] Lockfree Queue
+	- [x] Lecture 05
+		- [x] Array Lock
+		- [x] Backoff Lock
 	- [ ] Lecture 06
-		- [ ] FIFO rw lock
+		- [x] FIFO rw lock
 		- [ ] Queue with rw lock
-	- [ ] Lecture 07
-		- [ ] Lazy Linked List
-		- [ ] Lockfree LL
-		- [ ] Optimistic LL
-		- [ ] Fine LL
-		- [ ] Coarse LL
-	- [ ] Lecture 08
-		- [ ] Bounded Queue
-		- [ ] Lockfree Stack
-		- [ ] Elimination Backoff Stack
+	- [x] Lecture 07
+		- [x] Lazy Linked List
+		- [x] Lockfree LL
+		- [x] Optimistic LL
+		- [x] Fine LL
+		- [x] Coarse LL
+	- [x] Lecture 08
+		- [x] Bounded Queue
+		- [x] Lockfree Stack
+		- [x] Elimination Backoff Stack
 - [ ] Better exception handling
 	- [ ] A state machine
 - [ ] Log memory allocation and cleanup in case of abort

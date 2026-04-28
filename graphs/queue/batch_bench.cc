@@ -20,8 +20,8 @@ public:
     bool try_enqueue(const T& x) {
         bool success = false;
         atomically([&]() {
-            size_t h = (size_t)head;
-            size_t t = (size_t)tail;
+            size_t h = static_cast<size_t>(head);
+            size_t t = static_cast<size_t>(tail);
             if (t - h == cap) return;
             buffer[t % cap] = x;
             tail = t + 1;
@@ -33,10 +33,10 @@ public:
     optional<T> try_dequeue() {
         optional<T> result = nullopt;
         atomically([&]() {
-            size_t h = (size_t)head;
-            size_t t = (size_t)tail;
+            size_t h = static_cast<size_t>(head);
+            size_t t = static_cast<size_t>(tail);
             if (t == h) return;
-            result = (T)buffer[h % cap];
+            result = static_cast<T>(buffer[h % cap]);
             head = h + 1;
         });
         return result;
