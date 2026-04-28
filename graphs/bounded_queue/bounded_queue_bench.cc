@@ -35,6 +35,7 @@ void benchmark(int num_threads, int ops_per_thread) {
 }
 
 int main() {
+    cout<<"threads,throughput\n";
     for (int t = 1; t <= 8; t *= 2) {
         benchmark(t, 100000);
     }

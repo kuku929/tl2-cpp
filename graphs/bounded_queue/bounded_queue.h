@@ -3,8 +3,6 @@
 #include <vector>
 #include <optional>
 #include <set>
-#include <mutex> //used for tests
-#include <gtest/gtest.h>
 #include "tl2/tl2.h"
 
 using namespace tl2;

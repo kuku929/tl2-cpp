@@ -1,0 +1,3 @@
+(executable
+ (name bounded_queue_bench)
+ (libraries kcas kcas_data domainslib unix))
