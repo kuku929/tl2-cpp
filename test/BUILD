@@ -22,7 +22,7 @@ cc_test(
 cc_test(
     name = "a_lock",
     size = "small",
-    srcs = ["Alock.cc"],
+    srcs = ["a_lock.cc"],
     deps = [
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -70,9 +70,9 @@ cc_test(
     ],
 )
 cc_test(
-    name = "FIFO_RW_Lock",
+    name = "fifo_rw_lock",
     size = "small",
-    srcs = ["FIFO_RW_Lock.cc"],
+    srcs = ["fifo_rw_lock.cc"],
     deps = [
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -80,9 +80,9 @@ cc_test(
     ],
 )
 cc_test(
-    name = "Lazy_linked_list",
+    name = "lazy_linked_list",
     size = "small",
-    srcs = ["Lazy_linked_list.cc"],
+    srcs = ["lazy_linked_list.cc"],
     deps = [
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -90,9 +90,9 @@ cc_test(
     ],
 )
 cc_test(
-    name = "Simple_RW_Lock",
+    name = "simple_rw_lock",
     size = "small",
-    srcs = ["Simple_RW_Lock.cc"],
+    srcs = ["simple_rw_lock.cc"],
     deps = [
         "@googletest//:gtest",
         "@googletest//:gtest_main",
