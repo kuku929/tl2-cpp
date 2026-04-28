@@ -1,7 +1,7 @@
-#include <gtest/gtest.h>
-#include <climits>
-#include <thread>
 #include "tl2/tl2.h"
+#include <climits>
+#include <gtest/gtest.h>
+#include <thread>
 
 using namespace tl2;
 
@@ -9,20 +9,18 @@ using namespace tl2;
 CANNOT BE IMPLEMENTED WITH STM
 */
 
-template <typename T>
-struct Node {
+template <typename T> struct Node {
   T item;
   int key;
-  TVar<Node*> next;
+  TVar<Node *> next;
   TVar<bool> marked;
 
-  Node(T item_, int key_, Node* next_)
+  Node(T item_, int key_, Node *next_)
       : item(item_), key(key_), next(next_), marked(false) {}
 };
 
-template <typename T>
-class LazyLinkedList {
- public:
+template <typename T> class LazyLinkedList {
+public:
   LazyLinkedList() {
     tail = new Node<T>(T{}, INT_MAX, nullptr);
     head = new Node<T>(T{}, INT_MIN, tail);
@@ -32,8 +30,8 @@ class LazyLinkedList {
     int key = std::hash<T>{}(item);
 
     while (true) {
-      Node<T>* pred;
-      Node<T>* curr;
+      Node<T> *pred;
+      Node<T> *curr;
 
       locate(key, pred, curr);
 
@@ -43,7 +41,7 @@ class LazyLinkedList {
       atomically([&]() {
         if (!static_cast<bool>(pred->marked) &&
             !static_cast<bool>(curr->marked) &&
-            static_cast<Node<T>*>(pred->next) == curr) {
+            static_cast<Node<T> *>(pred->next) == curr) {
 
           decided = true;
 
@@ -52,7 +50,7 @@ class LazyLinkedList {
             return;
           }
 
-          Node<T>* node = new Node<T>(item, key, curr);
+          Node<T> *node = new Node<T>(item, key, curr);
           pred->next = node;
           result = true;
         }
@@ -67,8 +65,8 @@ class LazyLinkedList {
     int key = std::hash<T>{}(item);
 
     while (true) {
-      Node<T>* pred;
-      Node<T>* curr;
+      Node<T> *pred;
+      Node<T> *curr;
 
       locate(key, pred, curr);
 
@@ -78,7 +76,7 @@ class LazyLinkedList {
       atomically([&]() {
         if (!static_cast<bool>(pred->marked) &&
             !static_cast<bool>(curr->marked) &&
-            static_cast<Node<T>*>(pred->next) == curr) {
+            static_cast<Node<T> *>(pred->next) == curr) {
 
           decided = true;
 
@@ -88,7 +86,7 @@ class LazyLinkedList {
           }
 
           curr->marked = true;
-          pred->next = static_cast<Node<T>*>(curr->next);
+          pred->next = static_cast<Node<T> *>(curr->next);
           result = true;
         }
       });
@@ -100,12 +98,12 @@ class LazyLinkedList {
 
   bool contains(T item) {
     int key = std::hash<T>{}(item);
-    Node<T>* curr = head;
+    Node<T> *curr = head;
 
     while (true) {
-      Node<T>* next;
+      Node<T> *next;
 
-      atomically([&]() { next = static_cast<Node<T>*>(curr->next); });
+      atomically([&]() { next = static_cast<Node<T> *>(curr->next); });
 
       if (next->key >= key) {
         bool marked;
@@ -117,19 +115,19 @@ class LazyLinkedList {
     }
   }
 
- private:
-  Node<T>* head;
-  Node<T>* tail;
+private:
+  Node<T> *head;
+  Node<T> *tail;
 
-  void locate(int key, Node<T>*& pred, Node<T>*& curr) {
+  void locate(int key, Node<T> *&pred, Node<T> *&curr) {
     pred = head;
 
-    atomically([&]() { curr = static_cast<Node<T>*>(head->next); });
+    atomically([&]() { curr = static_cast<Node<T> *>(head->next); });
 
     while (curr->key < key) {
       pred = curr;
 
-      atomically([&]() { curr = static_cast<Node<T>*>(curr->next); });
+      atomically([&]() { curr = static_cast<Node<T> *>(curr->next); });
     }
   }
 };

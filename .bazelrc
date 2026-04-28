@@ -12,7 +12,6 @@ build --cxxopt=-Wold-style-cast
 build --cxxopt=-Woverloaded-virtual
 build --cxxopt=-Wredundant-decls
 build --cxxopt=-Wshadow
-build --cxxopt=-Wsign-conversion
 build --cxxopt=-Wsign-promo
 build --cxxopt=-Wstrict-null-sentinel
 build --cxxopt=-Wstrict-overflow=5

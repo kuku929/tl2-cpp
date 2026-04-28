@@ -9,14 +9,51 @@
 #include <memory>
 #include <memory_resource>
 #include <optional>
+#include <type_traits>
+#include <utility>
+#include <vector>
+
+#ifdef DEBUG
+#include <iostream>
+template <>
+struct std::formatter<tl2::internal::ReadOp>
+    : public std::formatter<
+          std::pair<tl2::internal::addr_t, tl2::internal::version_t>> {
+  using Parent = std::formatter<
+      std::pair<tl2::internal::addr_t, tl2::internal::version_t>>;
+  using Parent::parse;
+  auto format(const tl2::internal::ReadOp &op,
+              std::format_context &format_ctx) const {
+    return Parent::format(std::pair(op.addr(), op.version()), format_ctx);
+  }
+  template <class Context>
+  Context::iterator format(const tl2::internal::ReadOp &t, Context &ctx) const;
+};
+
+template <>
+struct std::formatter<tl2::internal::WriteOp>
+    : public std::formatter<std::vector<int>> {
+  using Parent = std::formatter<std::vector<int>>;
+  using Parent::parse;
+  auto format(const tl2::internal::WriteOp &op,
+              std::format_context &format_ctx) const {
+    return Parent::format(op.value<std::vector<int>>(), format_ctx);
+  }
+  template <class Context>
+  Context::iterator format(const tl2::internal::ReadOp &t, Context &ctx) const;
+};
+template <typename T>
+  requires std::formattable<T, char>
+inline void print(T &obj, char end = '\n') {
+  std::cerr << std::format("{0}", obj) << end;
+}
+#endif
 
 namespace tl2::internal {
 using namespace tl2::internal;
 template <typename WriteSetT, typename ReadSetT, typename StorePolicy>
 class Log {
 public:
-  // Default: use per-log monotonic resource backed by default upstream
-  // allocation
   Log() : r(), w(), store(StorePolicy()) {}
 
   template <typename T> std::optional<T> value_at(const T *addr) const {
@@ -41,18 +78,15 @@ public:
     const auto entry = w.find_opt(a);
     if (entry.has_value()) {
       // Address already in write-set: overwrite existing staged value.
-      std::memcpy(reinterpret_cast<void *>(entry.value()),
-                  reinterpret_cast<const void *>(&val), sizeof(T));
+      T *val_addr = reinterpret_cast<T *>(entry.value());
+      *val_addr = std::move(val);
       return;
-      // w.modify not required
     }
 
     // First write for this address in this transaction: stage a copied value.
-    const std::size_t nbytes = sizeof(T);
-    void *storage = store.allocate(nbytes, alignof(T));
-    std::memcpy(storage, reinterpret_cast<const void *>(&val), nbytes);
-    const T *copied_ptr = reinterpret_cast<const T *>(storage);
-    const WriteOp &op = {addr, copied_ptr};
+    void *storage = store.allocate(sizeof(T), alignof(T));
+    T *obj = new (storage) T(std::move(val));
+    const auto op = WriteOp(addr, obj);
     w.update(op);
   }
 
@@ -62,16 +96,23 @@ public:
     w.clear();
   }
 
-  WriteSetT &writes() { return w; }
+  void deallocate_resources() {
+    store.deallocate(w);
+    r.clear();
+    w.clear();
+  }
 
-  ReadSetT &reads() { return r; }
+  WriteSetT &writes() noexcept { return w; }
+
+  ReadSetT &reads() noexcept { return r; }
 
 private:
   ReadSetT r;
   WriteSetT w;
   StorePolicy store;
 };
-inline static thread_local Log<WriteOrderedSet, ReadOrderedSet, SynchronizedPoolPolicy>
+inline static thread_local Log<WriteOrderedSet, ReadOrderedSet,
+                               SynchronizedPoolPolicy>
     log;
 // inline static thread_local Log<WriteOrderedSet, ReadOrderedSet>
 // log(&internal::synchronized_pool_resource);

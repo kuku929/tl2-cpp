@@ -8,12 +8,16 @@
 #define TL2_THREAD_STORE_SIZE 4096 // in bytes
 
 namespace tl2::internal {
-// Single shared synchronized pool resource for those logs that are created
-// with an external resource (e.g., to share allocations across threads).
-
 class PerThreadPolicy {
 public:
-  template <typename WS> void clear(WS &w) { return res.release(); }
+  template <typename WS> void clear(WS &w) {
+    for (const auto &op : w) {
+      op.free_heap();
+    }
+    return res.release();
+  }
+
+  template <typename WS> void deallocate(WS &w) { return res.release(); }
 
   void *allocate(std::size_t bytes, std::size_t alignment) {
     return res.allocate(bytes, alignment);
@@ -26,6 +30,14 @@ private:
 class SynchronizedPoolPolicy {
 public:
   template <typename WS> void clear(WS &w) {
+    // ?? can this be const
+    for (const auto &op : w) {
+      op.free_heap();
+      res.deallocate(reinterpret_cast<void *>(op.val_addr()), op.bytes_size());
+    }
+  }
+
+  template <typename WS> void deallocate(WS &w) {
     for (const auto &op : w) {
       res.deallocate(reinterpret_cast<void *>(op.val_addr()), op.bytes_size());
     }

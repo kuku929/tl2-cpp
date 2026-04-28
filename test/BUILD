@@ -69,40 +69,51 @@ cc_test(
         "//tl2:tl2"
     ],
 )
-# cc_test(
-#     name = "FIFO_RW_Lock",
-#     size = "small",
-#     srcs = ["FIFO_RW_Lock.cc"],
-#     deps = [
-#         "@googletest//:gtest",
-#         "@googletest//:gtest_main",
-#         "//tl2:tl2"
-#     ],
-# )
-# cc_test(
-#     name = "Lazy_linked_list",
-#     size = "small",
-#     srcs = ["Lazy_linked_list.cc"],
-#     deps = [
-#         "@googletest//:gtest",
-#         "@googletest//:gtest_main",
-#         "//tl2:tl2"
-#     ],
-# )
-# cc_test(
-#     name = "Simple_RW_Lock",
-#     size = "small",
-#     srcs = ["Simple_RW_Lock.cc"],
-#     deps = [
-#         "@googletest//:gtest",
-#         "@googletest//:gtest_main",
-#         "//tl2:tl2"
-#     ],
-# )
+cc_test(
+    name = "FIFO_RW_Lock",
+    size = "small",
+    srcs = ["FIFO_RW_Lock.cc"],
+    deps = [
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "//tl2:tl2"
+    ],
+)
+cc_test(
+    name = "Lazy_linked_list",
+    size = "small",
+    srcs = ["Lazy_linked_list.cc"],
+    deps = [
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "//tl2:tl2"
+    ],
+)
+cc_test(
+    name = "Simple_RW_Lock",
+    size = "small",
+    srcs = ["Simple_RW_Lock.cc"],
+    deps = [
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "//tl2:tl2"
+    ],
+)
 cc_test(
     name = "bakery",
     size = "small",
     srcs = ["bakery.cc"],
+    deps = [
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "//tl2:tl2"
+    ],
+)
+
+cc_test(
+    name = "high_mem_usage",
+    size = "small",
+    srcs = ["high_mem_usage.cc"],
     deps = [
         "@googletest//:gtest",
         "@googletest//:gtest_main",

@@ -7,11 +7,12 @@
 #include <iostream>
 #include <memory_resource>
 #include <thread>
+#include <type_traits>
 
 // TODO: Any way to detect invalid get/set at compile time?
 namespace tl2 {
 using namespace tl2::internal;
-template <typename T> class TVar {
+template <tl2::internal::Constructible T> class TVar {
 public:
   TVar(T data) : m_data(std::move(data)) {}
 
@@ -24,10 +25,8 @@ public:
     return m_data;
   }
 
-  TVar &operator=(const T &val) {
+  TVar &operator=(const T val) {
     manager.assert_in_transaction();
-    if (&val == &m_data)
-      return *this;
     log.append_write(&m_data, val);
     return *this;
   }
