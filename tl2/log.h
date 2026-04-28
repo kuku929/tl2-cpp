@@ -116,7 +116,6 @@ private:
 // inline static thread_local Log<WriteOrderedSet, ReadOrderedSet,
 //                                SynchronizedPoolPolicy>
 //     log;
-inline static thread_local Log<WriteHashVectorSet, ReadOrderedSet, PerThreadPolicy> log;
-// inline static thread_local Log<WriteOrderedSet, ReadOrderedSet>
-// log(&internal::synchronized_pool_resource);
+// inline static thread_local Log<WriteHashVectorSet, ReadOrderedSet, PerThreadPolicy> log;
+inline static thread_local Log<WriteOrderedSet, ReadOrderedSet, PerThreadPolicy> log;
 } // namespace tl2::internal

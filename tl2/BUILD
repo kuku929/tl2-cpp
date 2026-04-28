@@ -13,9 +13,10 @@ cc_library(
             "log.h",
             "state.h",
             "memory.h",
-            "function.h"
+            "function.h",
+            "ankerl/unordered_dense.h",
+            "ankerl/stl.h"
             ],
     includes = ["."],
-    deps = ["@unordered_dense//:unordered_dense"],
     visibility = ["//visibility:public"]
 )

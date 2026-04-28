@@ -1,14 +1,13 @@
 #pragma once
 #include "types.h"
+#include "ankerl/unordered_dense.h"
+#include "function.h"
 #include <algorithm>
 #include <cstddef>
-#include "function.h"
 #include <memory>
 #include <optional>
 #include <set>
 #include <vector>
-
-#include <ankerl/unordered_dense.h>
 
 namespace tl2::internal {
 using namespace tl2::internal;

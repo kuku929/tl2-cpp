@@ -29,20 +29,3 @@ git_override(
 )
 
 bazel_dep(name = "rules_cc", version = "0.2.17")
-
-http_archive(
-    name = "unordered_dense",
-    urls = ["https://github.com/martinus/unordered_dense/archive/refs/tags/v4.4.0.tar.gz"],
-    strip_prefix = "unordered_dense-4.4.0",
-    build_file_content = """
-load(\"@rules_cc//cc:cc_library.bzl\", \"cc_library\")
-
-cc_library(
-    name = \"unordered_dense\",
-    hdrs = glob([\"include/**/*.h\"]),
-    includes = [\"include\"],
-    visibility = [\"//visibility:public\"],
-)
-""",
-)
-

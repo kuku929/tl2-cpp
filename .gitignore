@@ -1,6 +1,10 @@
 # Prerequisites
 *.d
 
+perf.data
+perf.data.old
+
+
 # Compiled Object files
 *.slo
 *.lo
