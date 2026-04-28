@@ -1,10 +1,14 @@
 #pragma once
 #include "types.h"
+#include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <set>
+#include <vector>
+
+#include <ankerl/unordered_dense.h>
 
 namespace tl2::internal {
 using namespace tl2::internal;
@@ -92,4 +96,67 @@ public:
     }
   }
 };
+
+class WriteHashVectorSet : public WriteSet {
+public:
+  WriteHashVectorSet() = default;
+
+  void update(const WriteOp &op) override {
+    const addr_t a = op.addr();
+    auto it = m_map.find(a);
+    if (it == m_map.end()) {
+      m_map.emplace(a, m_vec.size());
+      m_vec.push_back(op);
+    } else {
+      m_vec[it->second] = op;
+    }
+  }
+
+  std::optional<value_addr_t> find_opt(const WriteOp &op) const override {
+    auto it = m_map.find(op.addr());
+    if (it == m_map.end()) {
+      return std::nullopt;
+    }
+    return std::optional(m_vec[it->second].val_addr());
+  }
+
+  void clear() {
+    m_vec.clear();
+    m_map.clear();
+  }
+
+  auto begin() {
+    sort_if_needed();
+    return m_vec.begin();
+  }
+  auto end() {
+    sort_if_needed();
+    return m_vec.end();
+  }
+
+  auto begin() const {
+    const_cast<WriteHashVectorSet *>(this)->sort_if_needed();
+    return m_vec.begin();
+  }
+  auto end() const {
+    const_cast<WriteHashVectorSet *>(this)->sort_if_needed();
+    return m_vec.end();
+  }
+
+private:
+  void sort_if_needed() {
+    std::sort(m_vec.begin(), m_vec.end(),
+              [](const WriteOp &a, const WriteOp &b) {
+                return a.addr() < b.addr();
+              });
+    m_map.clear();
+    for (size_t i = 0; i < m_vec.size(); ++i) {
+      m_map.emplace(m_vec[i].addr(), i);
+    }
+  }
+
+  std::vector<WriteOp> m_vec;
+  ankerl::unordered_dense::map<addr_t, size_t> m_map;
+};
+
 } // namespace tl2::internal

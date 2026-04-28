@@ -1,5 +1,7 @@
 module(name = "tl2-cpp", version = "1.0")
 
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 # Hedron's Compile Commands Extractor for Bazel
 # https://github.com/hedronvision/bazel-compile-commands-extractor
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
@@ -27,4 +29,20 @@ git_override(
 )
 
 bazel_dep(name = "rules_cc", version = "0.2.17")
+
+http_archive(
+    name = "unordered_dense",
+    urls = ["https://github.com/martinus/unordered_dense/archive/refs/tags/v4.4.0.tar.gz"],
+    strip_prefix = "unordered_dense-4.4.0",
+    build_file_content = """
+load(\"@rules_cc//cc:cc_library.bzl\", \"cc_library\")
+
+cc_library(
+    name = \"unordered_dense\",
+    hdrs = glob([\"include/**/*.h\"]),
+    includes = [\"include\"],
+    visibility = [\"//visibility:public\"],
+)
+""",
+)
 

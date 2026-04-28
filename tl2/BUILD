@@ -15,5 +15,6 @@ cc_library(
             "memory.h"
             ],
     includes = ["."],
+    deps = ["@unordered_dense//:unordered_dense"],
     visibility = ["//visibility:public"],
 )

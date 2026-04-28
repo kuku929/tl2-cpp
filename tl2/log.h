@@ -111,9 +111,10 @@ private:
   WriteSetT w;
   StorePolicy store;
 };
-inline static thread_local Log<WriteOrderedSet, ReadOrderedSet,
-                               SynchronizedPoolPolicy>
-    log;
+// inline static thread_local Log<WriteOrderedSet, ReadOrderedSet,
+//                                SynchronizedPoolPolicy>
+//     log;
+inline static thread_local Log<WriteHashVectorSet, ReadOrderedSet, PerThreadPolicy> log;
 // inline static thread_local Log<WriteOrderedSet, ReadOrderedSet>
 // log(&internal::synchronized_pool_resource);
 } // namespace tl2::internal
