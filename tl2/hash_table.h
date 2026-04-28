@@ -7,7 +7,7 @@
 
 namespace tl2::internal {
 using namespace tl2::internal;
-constexpr size_t LOCKTABLE_SIZE = 1 << 20;
+constexpr size_t LOCKTABLE_SIZE = 1 << 22;
 
 class LockTable {
 private:

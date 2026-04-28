@@ -56,7 +56,8 @@ class Log {
 public:
   Log() : r(), w(), store(StorePolicy()) {}
 
-  template <typename T> std::optional<T> value_at(const T *addr) const {
+  template <typename T> std::optional<T> 
+  __attribute__((always_inline)) value_at(const T *addr) const {
     // check in write set for this address
     const std::optional<addr_t> entry =
         w.find_opt(reinterpret_cast<addr_t>(addr));
@@ -66,14 +67,15 @@ public:
     return std::nullopt;
   }
 
-  template <typename T> void append_read(const T *addr) {
+  template <typename T> 
+  __attribute__((always_inline)) void append_read(const T *addr) {
     const addr_t a = reinterpret_cast<addr_t>(addr);
     const ReadOp &op = {a, hashtbl[a].get_version()};
     r.update(op);
   }
 
   template <typename T>
-  void append_write(const T *addr, const T &val) noexcept {
+  __attribute__((always_inline)) void append_write(const T *addr, const T &val) noexcept {
     const addr_t a = reinterpret_cast<addr_t>(addr);
     const auto entry = w.find_opt(a);
     if (entry.has_value()) {

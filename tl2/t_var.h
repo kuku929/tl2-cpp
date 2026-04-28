@@ -9,7 +9,6 @@
 #include <thread>
 #include <type_traits>
 
-// TODO: Any way to detect invalid get/set at compile time?
 namespace tl2 {
 using namespace tl2::internal;
 template <tl2::internal::Constructible T> class TVar {
