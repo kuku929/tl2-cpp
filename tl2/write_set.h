@@ -6,6 +6,10 @@
 #include "ska_sort.h"
 #include <algorithm>
 #include <cstddef>
+<<<<<<< HEAD
+=======
+#include "function.h"
+>>>>>>> main
 #include <memory>
 #include <optional>
 #include <set>
@@ -54,6 +58,7 @@ public:
 private:
   addr_t m_a;
   addr_t m_val;
+<<<<<<< HEAD
   using destructor_t = void(*)(addr_t) noexcept;
   using move_t = void(*)(addr_t, addr_t) noexcept;
 
@@ -61,6 +66,10 @@ private:
   move_t m_move;
   // std::function<void(addr_t)> m_destructor;
   // std::function<void(addr_t, addr_t)> m_move;
+=======
+  func::function<void(addr_t)> m_destructor;
+  func::function<void(addr_t, addr_t)> m_move;
+>>>>>>> main
   std::size_t m_sz;
 };
 

@@ -69,6 +69,32 @@ public:
         return size;
     }
 
+    bool try_enq_tx(const T& x) {
+    size_t h = static_cast<size_t>(head);
+    size_t t = static_cast<size_t>(tail);
+
+    if (t - h == _capacity) {
+        return false;
+    }
+
+    items[t % _capacity] = x;
+    tail = t + 1;
+    return true;
+}
+
+std::optional<T> try_deq_tx() {
+    size_t h = static_cast<size_t>(head);
+    size_t t = static_cast<size_t>(tail);
+
+    if (t == h) {
+        return std::nullopt;
+    }
+
+    auto result = static_cast<T>(items[h % _capacity]);
+    head = h + 1;
+    return result;
+}
+
 private:
     const size_t _capacity;
     std::vector<TVar<T>> items;

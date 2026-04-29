@@ -5,6 +5,6 @@ cc_binary(
     name = "bench",
     srcs = ["bounded_queue_bench.cc","bounded_queue.h"],
     deps = [
-        "//tl2:tl2"
+        ":bounded_queue",
     ],
 )
