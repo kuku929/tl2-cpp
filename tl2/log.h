@@ -114,6 +114,9 @@ private:
   StorePolicy store;
 };
 // inline static thread_local Log<WriteOrderedSet, ReadOrderedSet, SynchronizedPoolPolicy> log;
-inline static thread_local Log<WriteHashVectorSet, ReadOrderedSet, PerThreadPolicy> log;
+using DefaultReadSet = ReadOrderedSet;
+// using DefaultReadSet = ReadVectorSet;
+// using DefaultReadSet = ReadHashVectorSet;
+inline static thread_local Log<WriteHashVectorSet, ReadVectorSet, PerThreadPolicy> log;
 // inline static thread_local Log<WriteOrderedSet, ReadOrderedSet, PerThreadPolicy> log;
 } // namespace tl2::internal

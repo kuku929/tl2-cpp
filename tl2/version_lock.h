@@ -3,7 +3,7 @@
 #include "write_set.h"
 #include <atomic>
 #include <thread>
-#include <unordered_set>
+#include <ankerl/unordered_dense.h>
 #include <vector>
 
 namespace tl2::internal {
@@ -116,7 +116,7 @@ public:
   LockGuard(WriteSet &w, LockSelector lock_selector) {
     w.stable_sort();
     m_locked.reserve(w.size());
-    std::unordered_set<VersionLock *> seen;
+    ankerl::unordered_dense::set<VersionLock *> seen;
     for (const WriteOp &op : w) {
       VersionLock *lock = &lock_selector(op);
       if (seen.insert(lock).second) {

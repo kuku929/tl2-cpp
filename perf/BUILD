@@ -28,6 +28,7 @@ cc_binary(
     name = "array",
     srcs = ["//perf:profile_array.cc"],
     deps = [
-        "//tl2:tl2"
+        "//tl2:tl2",
+        "@googletest//:gtest"
     ],
 )

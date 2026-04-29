@@ -1,7 +1,9 @@
 #pragma once
 #include "types.h"
+#include <ankerl/unordered_dense.h>
 #include <set>
 #include <tuple>
+#include <vector>
 
 namespace tl2::internal {
 using namespace tl2::internal;
@@ -43,5 +45,54 @@ public:
       Set::insert(op);
     }
   }
+};
+
+class ReadVectorSet : public AbstractReadSet {
+public:
+  ReadVectorSet() = default;
+
+  void clear() override { m_vec.clear(); }
+
+  void update(const ReadOp &op) override {
+    m_vec.push_back(op);
+  }
+
+  std::size_t size() const { return m_vec.size(); }
+
+  auto begin() const { return m_vec.begin(); }
+  auto end() const { return m_vec.end(); }
+
+private:
+  std::vector<ReadOp> m_vec;
+};
+
+class ReadHashVectorSet : public AbstractReadSet {
+public:
+  ReadHashVectorSet() = default;
+
+  void clear() override {
+    m_vec.clear();
+    m_map.clear();
+  }
+
+  void update(const ReadOp &op) override {
+    const addr_t a = op.addr();
+    auto it = m_map.find(a);
+    if (it == m_map.end()) {
+      m_map.emplace(a, m_vec.size());
+      m_vec.push_back(op);
+    } else {
+      m_vec[it->second] = op;
+    }
+  }
+
+  std::size_t size() const { return m_vec.size(); }
+
+  auto begin() const { return m_vec.begin(); }
+  auto end() const { return m_vec.end(); }
+
+private:
+  std::vector<ReadOp> m_vec;
+  ankerl::unordered_dense::map<addr_t, size_t> m_map;
 };
 } // namespace tl2::internal
