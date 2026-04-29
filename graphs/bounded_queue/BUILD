@@ -1,18 +1,16 @@
-load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+
 cc_library(
     name = "bounded_queue",
-    hdrs = ["bounded_queue.h",],
-    deps=["//tl2:tl2",],
-    includes = ["."],
+    hdrs = ["bounded_queue.h"],
+    deps = ["//tl2:tl2"],
     visibility = ["//visibility:public"],
 )
-cc_test(
+
+cc_binary(
     name = "bench",
-    size = "small",
-    srcs = ["bench.cc","bounded_queue.h",],
+    srcs = ["bench.cc"],
     deps = [
-        "//tl2:tl2"
+        ":bounded_queue",
     ],
 )
