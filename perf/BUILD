@@ -23,3 +23,11 @@ cc_binary(
     ],
     # cxxopts = ["-O2"]
 )
+
+cc_binary(
+    name = "array",
+    srcs = ["//perf:profile_array.cc"],
+    deps = [
+        "//tl2:tl2"
+    ],
+)

@@ -5,7 +5,7 @@
 #include <vector>
 using namespace tl2;
 
-const size_t LARGE_SIZE = 10;
+const size_t LARGE_SIZE = 100'000;
 
 int run_two(const uint niters) {
   TVar<std::vector<int>> tvar(std::vector<int>(LARGE_SIZE, 0));
@@ -43,16 +43,13 @@ int run_two(const uint niters) {
 
 int run_single(const uint niters) {
   TVar<std::vector<int>> tvar(std::vector<int>(LARGE_SIZE, 0));
-  std::thread t1([&]() {
-    for (uint i = 0; i < niters; ++i) {
-      atomically([&]() {
-        std::vector<int> v = static_cast<std::vector<int>>(tvar);
-        v[static_cast<size_t>(i % LARGE_SIZE)] += 1;
-        tvar = v;
-      });
-    }
-  });
-  t1.join();
+  for (uint i = 0; i < niters; ++i) {
+    atomically([&]() {
+      std::vector<int> v = static_cast<std::vector<int>>(tvar);
+      v[static_cast<size_t>(i % LARGE_SIZE)] += 1;
+      tvar = v;
+    });
+  }
   int total = 0;
   {
     atomically([&]() {

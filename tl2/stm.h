@@ -20,8 +20,7 @@ inline void commit(version_t write_version) {
 
 inline bool try_commit() {
   auto guard = make_lock_guard(
-      log.writes().begin(), log.writes().end(),
-      [](const WriteOp &op) -> VersionLock & { return hashtbl[op.addr()]; });
+      log.writes(), [](const WriteOp &op) -> VersionLock & { return hashtbl[op.addr()]; });
   const auto write_version = global_clock.incr_version();
   if (write_version == manager.read_version() + 1) {
     // no other thread has made changes commit
@@ -44,6 +43,6 @@ template <typename Transaction> inline void atomically(Transaction t) {
     if (try_commit())
       break;
   }
-  // manager.reset();
+  manager.reset();
 }
 }; // namespace tl2

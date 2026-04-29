@@ -1,15 +1,18 @@
 #pragma once
 #include "types.h"
+#include "write_set.h"
 #include <atomic>
 #include <thread>
 #include <unordered_set>
 #include <vector>
 
 namespace tl2::internal {
+using namespace tl2::internal;
 class VersionLock {
 public:
   version_t get_version() const {
     while (true) {
+      // TODO: is this fast
       const auto s = m_state.load(std::memory_order_acquire);
       if ((s & kLocked) == 0)
         return unpack_version(s);
@@ -108,12 +111,14 @@ private:
   Pad<pad_size> pad;
 } static global_clock;
 
-template <typename It, typename LockSelector> class LockGuard {
+template <typename WriteSet, typename LockSelector> class LockGuard {
 public:
-  LockGuard(It begin, It end, LockSelector lock_selector) {
+  LockGuard(WriteSet &w, LockSelector lock_selector) {
+    w.stable_sort();
+    m_locked.reserve(w.size());
     std::unordered_set<VersionLock *> seen;
-    for (auto it = begin; it != end; ++it) {
-      VersionLock *lock = &lock_selector(*it);
+    for (const WriteOp &op : w) {
+      VersionLock *lock = &lock_selector(op);
       if (seen.insert(lock).second) {
         lock->lock();
         m_locked.push_back(lock);
@@ -136,8 +141,8 @@ private:
   std::vector<VersionLock *> m_locked;
 };
 
-template <typename It, typename LockSelector>
-auto make_lock_guard(It begin, It end, LockSelector lock_selector) {
-  return LockGuard<It, LockSelector>(begin, end, lock_selector);
+template <typename WriteSet, typename LockSelector>
+auto make_lock_guard(WriteSet &w, LockSelector lock_selector) {
+  return LockGuard<WriteSet, LockSelector>(w, lock_selector);
 }
 } // namespace tl2::internal

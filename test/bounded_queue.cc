@@ -89,7 +89,7 @@ TEST(BoundedQueue, EnqueueDequeueSingle) {
 // concurrent access test
 TEST(BoundedQueue, ConcurrentProducerConsumer) {
   BoundedQueue<int> q(1000);
-  constexpr int N = 1000;
+  constexpr int N = 100'000;
 
   std::thread producer([&]() {
     for (int i = 0; i < N; i++) {
@@ -115,7 +115,7 @@ TEST(BoundedQueue, ConcurrentProducerConsumer) {
 
 // no lost elements
 TEST(BoundedQueue, NoLostElements) {
-  const int N = 10000;
+  const int N = 100'000;
   BoundedQueue<int> q(N);
 
   std::vector<bool> seen(N + 1, false);

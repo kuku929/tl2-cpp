@@ -1,7 +1,6 @@
-load("@rules_cc//cc:cc_test.bzl", "cc_test")
-cc_test(
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+cc_binary(
     name = "bench",
-    size = "small",
     srcs = ["bench.cc"],
     deps = [
         "//tl2:tl2"

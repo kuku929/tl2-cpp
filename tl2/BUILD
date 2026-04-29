@@ -15,7 +15,8 @@ cc_library(
             "memory.h",
             "function.h",
             "ankerl/unordered_dense.h",
-            "ankerl/stl.h"
+            "ankerl/stl.h",
+            "ska_sort.h"
             ],
     includes = ["."],
     visibility = ["//visibility:public"]

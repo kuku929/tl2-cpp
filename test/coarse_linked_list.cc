@@ -102,7 +102,7 @@ TEST(STM, CoarseListBasic) {
 
 TEST(STM, CoarseListConcurrentInsert) {
   CoarseLinkedList<int> list;
-  const int N = 5000;
+  const int N = 100'000;
 
   std::thread t1([&]() {
     for (int i = 0; i < N; i++)
@@ -128,7 +128,7 @@ TEST(STM, CoarseListConcurrentInsert) {
 
 TEST(STM, CoarseListAddRemove) {
   CoarseLinkedList<int> list;
-  const int N = 3000;
+  const int N = 100'000;
 
   std::thread t1([&]() {
     for (int i = 0; i < N; i++)

@@ -16,7 +16,7 @@ private:
   version_t m_v;
 };
 
-class ReadSet {
+class AbstractReadSet {
 public:
   virtual void clear() = 0;
   virtual void update(const ReadOp &op) = 0;
@@ -28,10 +28,10 @@ public:
     return a.addr() < b.addr();
   }
 };
-class ReadOrderedSet : public std::set<ReadOp, ReadSetCompare>, public ReadSet {
+class ReadOrderedSet : public std::set<ReadOp, ReadSetCompare>, public AbstractReadSet {
 public:
   using Set = std::set<ReadOp, ReadSetCompare>;
-  ReadOrderedSet() : Set(), ReadSet() {}
+  ReadOrderedSet() : Set(), AbstractReadSet() {}
   void clear() override { Set::clear(); }
 
   void update(const ReadOp &op) override {

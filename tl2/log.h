@@ -88,7 +88,7 @@ public:
     // First write for this address in this transaction: stage a copied value.
     void *storage = store.allocate(sizeof(T), alignof(T));
     T *obj = new (storage) T(std::move(val));
-    const auto op = WriteOp(addr, obj);
+    const auto &op = WriteOp(addr, obj);
     w.update(op);
   }
 
@@ -113,9 +113,7 @@ private:
   WriteSetT w;
   StorePolicy store;
 };
-// inline static thread_local Log<WriteOrderedSet, ReadOrderedSet,
-//                                SynchronizedPoolPolicy>
-//     log;
-// inline static thread_local Log<WriteHashVectorSet, ReadOrderedSet, PerThreadPolicy> log;
-inline static thread_local Log<WriteOrderedSet, ReadOrderedSet, PerThreadPolicy> log;
+// inline static thread_local Log<WriteOrderedSet, ReadOrderedSet, SynchronizedPoolPolicy> log;
+inline static thread_local Log<WriteHashVectorSet, ReadOrderedSet, PerThreadPolicy> log;
+// inline static thread_local Log<WriteOrderedSet, ReadOrderedSet, PerThreadPolicy> log;
 } // namespace tl2::internal
