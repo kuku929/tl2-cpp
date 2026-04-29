@@ -1,0 +1,3 @@
+(executable
+ (name bench)
+ (libraries kcas kcas_data domainslib unix))

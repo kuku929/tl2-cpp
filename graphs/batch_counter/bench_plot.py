@@ -18,7 +18,7 @@ plt.plot(ocaml_x, ocaml_y, marker='s', label="OCaml Kcas")
 
 plt.xlabel("Threads / Domains")
 plt.ylabel("Throughput (ops/sec)")
-plt.title("STM Queue Benchmark")
+plt.title("Batch Counter Benchmark")
 plt.legend()
 plt.grid()
 
