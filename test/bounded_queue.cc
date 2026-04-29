@@ -17,40 +17,25 @@ public:
     bool success = false;
 
     tl2::atomically([&]() {
-      size_t h = static_cast<size_t>(head);
-      size_t t = static_cast<size_t>(tail);
-
-      if (t - h == _capacity) {
-        success = false;
-        return;
-      }
-
-      items[t % _capacity] = x;
-      tail = t + 1;
-      success = true;
+      success = enq_tx(x);
     });
 
     return success;
   }
 
-  // returns std::nullopt if the queue is empty
-  std::optional<T> try_deq() {
-    std::optional<T> result = std::nullopt;
+  // returns false if the queue is empty, otherwise returns true and sets out
+  bool try_deq(T& out) {
+    bool success = false;
 
     tl2::atomically([&]() {
-      size_t h = static_cast<size_t>(head);
-      size_t t = static_cast<size_t>(tail);
-
-      if (t == h) {
-        result = std::nullopt;
-        return;
+      auto res = deq_tx();
+      if (res.first) {
+        out = res.second;
+        success = true;
       }
-
-      result = static_cast<T>(items[h % _capacity]);
-      head = h + 1;
     });
 
-    return result;
+    return success;
   }
 
   size_t capacity() const { return _capacity; }
@@ -61,6 +46,34 @@ public:
       size = static_cast<size_t>(tail) - static_cast<size_t>(head);
     });
     return size;
+  }
+
+  // Batch enqueue/dequeue in a single transaction for better performance
+  // Usage: atomically([&]() { q.enq_tx(x); q.deq_tx(); });
+  bool enq_tx(const T& x) {
+    size_t h = static_cast<size_t>(head);
+    size_t t = static_cast<size_t>(tail);
+
+    if (t - h == _capacity) {
+      return false;
+    }
+
+    items[t % _capacity] = x;
+    tail = t + 1;
+    return true;
+  }
+
+  std::pair<bool, T> deq_tx() {
+    size_t h = static_cast<size_t>(head);
+    size_t t = static_cast<size_t>(tail);
+
+    if (t == h) {
+      return {false, T()};
+    }
+
+    auto result = static_cast<T>(items[h % _capacity]);
+    head = h + 1;
+    return {true, result};
   }
 
 private:
@@ -77,13 +90,12 @@ TEST(BoundedQueue, EnqueueDequeueSingle) {
   EXPECT_TRUE(q.try_enq(10));
   EXPECT_TRUE(q.try_enq(20));
 
-  auto x = q.try_deq();
-  ASSERT_TRUE(x.has_value());
-  EXPECT_EQ(*x, 10);
+  int x;
+  ASSERT_TRUE(q.try_deq(x));
+  EXPECT_EQ(x, 10);
 
-  x = q.try_deq();
-  ASSERT_TRUE(x.has_value());
-  EXPECT_EQ(*x, 20);
+  ASSERT_TRUE(q.try_deq(x));
+  EXPECT_EQ(x, 20);
 }
 
 // concurrent access test
@@ -100,8 +112,8 @@ TEST(BoundedQueue, ConcurrentProducerConsumer) {
 
   std::thread consumer([&]() {
     for (int i = 0; i < N; i++) {
-      std::optional<int> x;
-      while (!(x = q.try_deq())) {
+      int x;
+      while (!q.try_deq(x)) {
       }
     }
   });
@@ -109,8 +121,8 @@ TEST(BoundedQueue, ConcurrentProducerConsumer) {
   producer.join();
   consumer.join();
 
-  auto x = q.try_deq();
-  EXPECT_FALSE(x.has_value());
+  int x;
+  EXPECT_FALSE(q.try_deq(x));
 }
 
 // no lost elements
@@ -129,12 +141,12 @@ TEST(BoundedQueue, NoLostElements) {
 
   std::thread consumer([&]() {
     for (size_t i = 0; i < N; i++) {
-      std::optional<size_t> x;
-      while (!(x = q.try_deq())) {
+      int x;
+      while (!q.try_deq(x)) {
       }
 
-      ASSERT_TRUE(*x >= 1 && *x <= N);
-      seen[*x] = true;
+      ASSERT_TRUE(x >= 1 && x <= N);
+      seen[x] = true;
     }
   });
 

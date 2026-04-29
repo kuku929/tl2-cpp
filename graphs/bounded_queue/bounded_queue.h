@@ -20,41 +20,25 @@ public:
         bool success=false;
 
         tl2::atomically([&]() {
-            size_t h = static_cast<size_t>(head);
-            size_t t = static_cast<size_t>(tail);
-
-            if (t - h == _capacity) {
-                success = false;
-                return;
-            }
-
-            items[t % _capacity] = x;
-            tail = t + 1;
-            success = true;
+            success = enq_tx(x);
         });
 
         return success;
     }
 
-    //returns std::nullopt if the queue is empty
-    std::optional<T> try_deq() {
-        std::optional<T> result = std::nullopt;
+    // returns false if the queue is empty, otherwise returns true and sets out
+    bool try_deq(T& out) {
+        bool success = false;
 
         tl2::atomically([&]() {
-            size_t h = static_cast<size_t>(head);
-            size_t t = static_cast<size_t>(tail);
-
-
-            if (t == h) {
-                result = std::nullopt;
-                return;
+            auto res = deq_tx();
+            if (res.first) {
+                out = res.second;
+                success = true;
             }
-
-            result = static_cast<T>(items[h % _capacity]);
-            head = h + 1;
         });
 
-        return result;
+        return success;
     }
 
     size_t capacity() const{
@@ -69,31 +53,33 @@ public:
         return size;
     }
 
-    bool try_enq_tx(const T& x) {
-    size_t h = static_cast<size_t>(head);
-    size_t t = static_cast<size_t>(tail);
+    // Batch enqueue/dequeue in a single transaction for better performance
+    // Usage: atomically([&]() { q.enq_tx(x); q.deq_tx(); });
+    bool enq_tx(const T& x) {
+        size_t h = static_cast<size_t>(head);
+        size_t t = static_cast<size_t>(tail);
 
-    if (t - h == _capacity) {
-        return false;
+        if (t - h == _capacity) {
+            return false;
+        }
+
+        items[t % _capacity] = x;
+        tail = t + 1;
+        return true;
     }
 
-    items[t % _capacity] = x;
-    tail = t + 1;
-    return true;
-}
+    std::pair<bool, T> deq_tx() {
+        size_t h = static_cast<size_t>(head);
+        size_t t = static_cast<size_t>(tail);
 
-std::optional<T> try_deq_tx() {
-    size_t h = static_cast<size_t>(head);
-    size_t t = static_cast<size_t>(tail);
+        if (t == h) {
+            return {false, T()};
+        }
 
-    if (t == h) {
-        return std::nullopt;
+        auto result = static_cast<T>(items[h % _capacity]);
+        head = h + 1;
+        return {true, result};
     }
-
-    auto result = static_cast<T>(items[h % _capacity]);
-    head = h + 1;
-    return result;
-}
 
 private:
     const size_t _capacity;
