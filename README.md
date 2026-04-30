@@ -82,6 +82,10 @@ Refer to googletest [documentation](https://github.com/google/googletest/blob/ma
 - [x] Any way to detect invalid get/set at compile time?
 - [x] Use CAS operations
 - [x] See how to specify own hash function(easy)
+- [ ] Can we abort instantly if we see something locked while reading? (Minimal improvement seen)
+- [ ] GV4?
+- [ ] Empty write set, dont bother the global clock
+- [ ] Random/exponential backoff in stm.h loop
 
 from [tl2](https://github.com/robert-schmidtke/stm/tree/master)
 ```
