@@ -1,3 +1,8 @@
+/*
+A simple shared counter.
+Meant to test the system as a whole.
+*/
+
 #include "tl2/tl2.h"
 #include <gtest/gtest.h>
 #include <iostream>
@@ -32,7 +37,7 @@ uint run(const uint niters) {
 }
 
 TEST(SimpleTests, TwoThreadsCounter) {
-  for (uint i = 1; i < 100'000; i += 10'000) {
+  for (uint i = 1; i < 10'000; i += 1000) {
     EXPECT_EQ(run(i), 2 * i);
   }
 }

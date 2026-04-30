@@ -24,19 +24,15 @@ public:
     ZOMBIE,
   };
 
-  void reset() {
-    /*
-    This does not free the heap allocated during the transaction
-    Should be called when transaction succeeds.
-    */
-    context.state = STATE::ZOMBIE;
-    log.deallocate_resources();
-  }
-
   void start_transaction() {
     log.clear();
     context.state = STATE::RUNNING;
     context.rv = global_clock.get_version();
+  }
+
+  void end_transaction() {
+    log.clear();
+    context.state = STATE::ZOMBIE;
   }
 
   inline version_t read_version() { return context.rv; }

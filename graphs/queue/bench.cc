@@ -1,14 +1,13 @@
+#include "queue.h"
+#include <chrono>
+#include <iomanip>
 #include <iostream>
+#include <optional>
 #include <thread>
 #include <vector>
-#include <chrono>
-#include <optional>
-#include <iomanip>
-#include "queue.h"
 
 using namespace std;
 using namespace tl2;
-
 
 void benchmark(int threads, int ops_per_thread) {
     STMQueue<int> q;
@@ -17,31 +16,32 @@ void benchmark(int threads, int ops_per_thread) {
     
     auto start = chrono::high_resolution_clock::now();
 
-    for (int t = 0; t < threads; t++) {
-        ts.emplace_back([&]() {
-            for (int i = 0; i < ops_per_thread; i++) {
-                if (i % 2 == 0)
-                    q.enqueue(i);
-                else
-                    q.dequeue();
-            }
-        });
-    }
+  for (int t = 0; t < threads; t++) {
+    ts.emplace_back([&]() {
+      for (int i = 0; i < ops_per_thread; i++) {
+        if (i % 2 == 0)
+          q.enqueue(i);
+        else
+          q.dequeue();
+      }
+    });
+  }
 
-    for (auto &t : ts) t.join();
+  for (auto &t : ts)
+    t.join();
 
-    auto end = chrono::high_resolution_clock::now();
+  auto end = chrono::high_resolution_clock::now();
 
-    double sec = chrono::duration<double>(end - start).count();
-    double total_ops = static_cast<double>(threads) * ops_per_thread;
+  double sec = chrono::duration<double>(end - start).count();
+  double total_ops = static_cast<double>(threads) * ops_per_thread;
 
-    cout << threads << "," << fixed << (total_ops / sec) << endl;
+  cout << threads << "," << fixed << (total_ops / sec) << endl;
 }
 
 int main() {
-    cout << "threads,throughput\n";
+  cout << "threads,throughput\n";
 
-    for (int t = 1; t <= 8; t *= 2) {
-        benchmark(t, 100000);
-    }
+  for (int t = 1; t <= 8; t *= 2) {
+    benchmark(t, 100000);
+  }
 }

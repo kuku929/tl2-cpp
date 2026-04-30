@@ -1,6 +1,6 @@
 #pragma once
-#include "types.h"
 #include "ankerl/unordered_dense.h"
+#include "types.h"
 // #include "function.h"
 // #include <functional>
 #include "ska_sort.h"
@@ -26,36 +26,38 @@ public:
   template <typename T>
   [[nodiscard]]
   WriteOp(const T *a, const T *v)
-      : m_a(reinterpret_cast<addr_t>(a)), m_val(reinterpret_cast<addr_t>(v)),
+      : m_a(to_addr(a)), m_val(to_addr(v)),
         m_destructor([](addr_t obj) noexcept -> void {
           reinterpret_cast<T *>(obj)->~T();
           return;
         }),
         m_move([](addr_t src, addr_t dest) noexcept -> void {
-          *reinterpret_cast<T *>(dest) = std::move(*reinterpret_cast<T *>(src));
+          *reinterpret_cast<T *>(dest) = (*reinterpret_cast<T *>(src));
         }),
         m_sz(sizeof(T)) {
     ;
   }
-   __attribute__((always_inline)) addr_t addr() const { return m_a; }
+  __attribute__((always_inline)) addr_t addr() const { return m_a; }
 
-  template <typename T> [[nodiscard]] const T value() const {
-    return *reinterpret_cast<const T *>(m_val);
+  template <typename T> [[nodiscard]] T &value() const {
+    return *reinterpret_cast<T *>(m_val);
   }
 
   __attribute__((always_inline)) std::size_t bytes_size() const { return m_sz; }
 
   __attribute__((always_inline)) addr_t val_addr() const { return m_val; }
 
-  __attribute__((always_inline)) void free_heap() const { return m_destructor(m_val); }
+  __attribute__((always_inline)) void free_heap() const {
+    return m_destructor(m_val);
+  }
 
   __attribute__((always_inline)) void move() { return m_move(m_val, m_a); }
 
 private:
   addr_t m_a;
   addr_t m_val;
-  using destructor_t = void(*)(addr_t) noexcept;
-  using move_t = void(*)(addr_t, addr_t) noexcept;
+  using destructor_t = void (*)(addr_t) noexcept;
+  using move_t = void (*)(addr_t, addr_t) noexcept;
 
   destructor_t m_destructor;
   move_t m_move;
@@ -73,7 +75,6 @@ public:
   std::optional<value_addr_t> find_opt(const WriteOp &&op) const {
     return find_opt(op);
   }
-
 };
 
 class WriteSetCompare {
@@ -89,11 +90,11 @@ public:
   using Set::size;
   WriteOrderedSet() : Set(), AbstractWriteSet() {}
   std::optional<value_addr_t> find_opt(const WriteOp &op) const override {
-    const auto itr = Set::find(op);
-    if (itr == end()) {
-      return std::nullopt;
+    std::optional<value_addr_t> result(std::nullopt);
+    if (const auto itr = Set::find(op); itr != end()) {
+      result = itr->val_addr();
     }
-    return std::optional(itr->val_addr());
+    return result;
   }
 
   void update(const WriteOp &op) override {
@@ -106,13 +107,9 @@ public:
     }
   }
 
-  std::size_t size() const override {
-    return Set::size();
-  }
+  std::size_t size() const override { return Set::size(); }
 
-  void stable_sort() override {
-    return;
-  }
+  void stable_sort() override { return; }
 };
 
 class WriteHashVectorSet : public AbstractWriteSet {
@@ -131,30 +128,24 @@ public:
   }
 
   void stable_sort() override {
-    return ska_sort(m_vec.begin(), m_vec.end(), [](const WriteOp &op) noexcept -> addr_t {
-      return op.addr();
-    });
+    return ska_sort(
+        m_vec.begin(), m_vec.end(),
+        [](const WriteOp &op) noexcept -> addr_t { return op.addr(); });
   }
 
   std::optional<value_addr_t> find_opt(const WriteOp &op) const override {
-    auto it = m_map.find(op.addr());
-    if (it == m_map.end()) {
-      return std::nullopt;
+    std::optional<value_addr_t> result(std::nullopt);
+    if (auto it = m_map.find(op.addr()); it != m_map.end()) {
+      result = m_vec[it->second].val_addr();
     }
-    return std::optional(m_vec[it->second].val_addr());
+    return result;
   }
 
-  std::size_t size() const override {
-    return m_vec.size();
-  }
+  std::size_t size() const override { return m_vec.size(); }
 
-  auto begin() const {
-    return m_vec.begin();
-  }
+  auto begin() const { return m_vec.begin(); }
 
-  auto end() const {
-    return m_vec.end();
-  }
+  auto end() const { return m_vec.end(); }
 
   void clear() {
     m_vec.clear();

@@ -56,50 +56,43 @@ class Log {
 public:
   Log() : r(), w(), store(StorePolicy()) {}
 
-  template <typename T> std::optional<T> 
-  __attribute__((always_inline)) value_at(const T *addr) const {
+  template <typename T>
+  std::optional<T *> __attribute__((always_inline))
+  value_at(const T *addr) const {
     // check in write set for this address
-    const std::optional<addr_t> entry =
-        w.find_opt(reinterpret_cast<addr_t>(addr));
-    if (entry.has_value()) {
-      return *reinterpret_cast<const T *>(entry.value());
+    std::optional<T *> result(std::nullopt);
+    if (const auto entry = w.find_opt(to_addr(addr)); entry.has_value()) {
+      result = reinterpret_cast<T *>(entry.value());
     }
-    return std::nullopt;
-  }
-
-  template <typename T> 
-  __attribute__((always_inline)) void append_read(const T *addr) {
-    const addr_t a = reinterpret_cast<addr_t>(addr);
-    const ReadOp &op = {a, hashtbl[a].get_version()};
-    r.update(op);
+    return result;
   }
 
   template <typename T>
-  __attribute__((always_inline)) void append_write(const T *addr, const T &val) noexcept {
-    const addr_t a = reinterpret_cast<addr_t>(addr);
-    const auto entry = w.find_opt(a);
-    if (entry.has_value()) {
+  __attribute__((always_inline)) void append_read(const T *addr) {
+
+    r.update({to_addr(addr), hashtbl[to_addr(addr)].get_version()});
+  }
+
+  template <typename T>
+  __attribute__((always_inline)) void append_write(const T *addr, T &&val) {
+    /*
+    val is a universal reference.
+    If given as a lvalue we will copy(slow).
+    If given as a rvalue we will move(fast).
+    */
+    if (const auto entry = w.find_opt(to_addr(addr)); entry.has_value()) {
       // Address already in write-set: overwrite existing staged value.
-      T *val_addr = reinterpret_cast<T *>(entry.value());
-      *val_addr = std::move(val);
+      *reinterpret_cast<T *>(entry.value()) = std::forward<T>(val);
       return;
     }
-
     // First write for this address in this transaction: stage a copied value.
-    void *storage = store.allocate(sizeof(T), alignof(T));
-    T *obj = new (storage) T(std::move(val));
-    const auto &op = WriteOp(addr, obj);
-    w.update(op);
+    T *obj =
+        new (store.allocate(sizeof(T), alignof(T))) T(std::forward<T>(val));
+    w.update(WriteOp(addr, obj));
   }
 
   void clear() {
     store.clear(w);
-    r.clear();
-    w.clear();
-  }
-
-  void deallocate_resources() {
-    store.deallocate(w);
     r.clear();
     w.clear();
   }
@@ -113,10 +106,11 @@ private:
   WriteSetT w;
   StorePolicy store;
 };
-// inline static thread_local Log<WriteOrderedSet, ReadOrderedSet, SynchronizedPoolPolicy> log;
-using DefaultReadSet = ReadOrderedSet;
-// using DefaultReadSet = ReadVectorSet;
-// using DefaultReadSet = ReadHashVectorSet;
-inline static thread_local Log<WriteHashVectorSet, ReadVectorSet, PerThreadPolicy> log;
-// inline static thread_local Log<WriteOrderedSet, ReadOrderedSet, PerThreadPolicy> log;
+// inline static thread_local Log<WriteOrderedSet, ReadOrderedSet,
+// SynchronizedPoolPolicy> log;
+inline static thread_local Log<WriteHashVectorSet, ReadOrderedSet,
+                               PerThreadPolicy>
+    log;
+// inline static thread_local Log<WriteOrderedSet, ReadOrderedSet,
+// PerThreadPolicy> log;
 } // namespace tl2::internal

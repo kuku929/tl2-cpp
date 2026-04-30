@@ -30,7 +30,8 @@ public:
     return a.addr() < b.addr();
   }
 };
-class ReadOrderedSet : public std::set<ReadOp, ReadSetCompare>, public AbstractReadSet {
+class ReadOrderedSet : public std::set<ReadOp, ReadSetCompare>,
+                       public AbstractReadSet {
 public:
   using Set = std::set<ReadOp, ReadSetCompare>;
   ReadOrderedSet() : Set(), AbstractReadSet() {}

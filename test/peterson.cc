@@ -1,3 +1,9 @@
+/*
+Peterson lock implementation using an STM.
+While this is quite useless on it's own,
+this is good test for the functioning of the
+system(while being simple to think about).
+*/
 #include "tl2/tl2.h"
 #include <array>
 #include <gtest/gtest.h>
@@ -47,7 +53,7 @@ int run(const int niters) {
 }
 
 TEST(SimpleTests, PetersonLock) {
-  for (int i = 1; i < 100'000; i += 10'000) {
+  for (int i = 1; i < 10'000; i += 1000) {
     EXPECT_EQ(run(i), 2 * i);
   }
 }

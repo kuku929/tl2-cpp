@@ -13,7 +13,6 @@ build --cxxopt=-Woverloaded-virtual
 build --cxxopt=-Wredundant-decls
 build --cxxopt=-Wsign-promo
 build --cxxopt=-Wstrict-null-sentinel
-build --cxxopt=-Wstrict-overflow=5
 build --cxxopt=-Wundef
 build --cxxopt=-Werror
 build --cxxopt=-Wno-implicit-fallthrough

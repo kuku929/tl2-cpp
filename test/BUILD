@@ -1,71 +1,10 @@
-load("@rules_cc//cc:cc_test.bzl", "cc_test")
-cc_test(
-    name = "two_threads_counter",
-    size = "small",
-    srcs = ["two_threads_counter.cc"],
-    deps = [
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-        "//tl2:tl2"
-    ],
-)
-cc_test(
-    name = "peterson",
-    size = "small",
-    srcs = ["peterson.cc"],
-    deps = [
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-        "//tl2:tl2"
-    ],
-)
-cc_test(
-    name = "large_array_updates",
-    size = "small",
-    srcs = ["large_array_updates.cc"],
-    deps = [
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-        "//tl2:tl2"
-    ],
-)
-cc_test(
-    name = "bounded_queue",
-    size = "small",
-    srcs = ["bounded_queue.cc"],
-    deps = [
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-        "//tl2:tl2"
-    ],
-)
-cc_test(
-    name = "coarse_linked_list",
-    size = "small",
-    srcs = ["coarse_linked_list.cc"],
-    deps = [
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-        "//tl2:tl2"
-    ],
-)
-cc_test(
-    name = "coarse_stack",
-    size = "small",
-    srcs = ["coarse_stack.cc"],
-    deps = [
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-        "//tl2:tl2"
-    ],
-)
-cc_test(
-    name = "high_mem_usage",
-    size = "small",
-    srcs = ["high_mem_usage.cc"],
-    deps = [
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-        "//tl2:tl2"
-    ],
-)
+load("//test:stm_test.bzl", "stm_test")
+
+stm_test(name = "two_threads_counter", srcs = ["two_threads_counter.cc"])
+stm_test(name = "peterson", srcs = ["peterson.cc"])
+stm_test(name = "copy_assignment", srcs = ["copy_assignment.cc"])
+stm_test(name = "invalid_access", srcs = ["invalid_access.cc"])
+stm_test(name = "large_array_updates", srcs = ["large_array_updates.cc"])
+stm_test(name = "linearizability", srcs = ["linearizabillity.cc"])
+stm_test(name = "high_mem_usage", srcs = ["high_mem_usage.cc"])
+stm_test(name = "check_rvo", srcs = ["check_rvo.cc"])

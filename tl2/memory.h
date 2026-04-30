@@ -17,8 +17,6 @@ public:
     return res.release();
   }
 
-  template <typename WS> void deallocate(WS &w) { return res.release(); }
-
   void *allocate(std::size_t bytes, std::size_t alignment) {
     return res.allocate(bytes, alignment);
   }
@@ -33,12 +31,6 @@ public:
     // ?? can this be const
     for (const auto &op : w) {
       op.free_heap();
-      res.deallocate(reinterpret_cast<void *>(op.val_addr()), op.bytes_size());
-    }
-  }
-
-  template <typename WS> void deallocate(WS &w) {
-    for (const auto &op : w) {
       res.deallocate(reinterpret_cast<void *>(op.val_addr()), op.bytes_size());
     }
   }

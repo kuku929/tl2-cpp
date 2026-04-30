@@ -1,5 +1,5 @@
-#include "tl2/tl2.h"
 #include "profile.h"
+#include "tl2/tl2.h"
 #include <iostream>
 #include <thread>
 using namespace tl2;

@@ -1,3 +1,10 @@
+/*
+This test ensures no deadlocks occur
+while acquiring locks in the write set.
+
+A good performance indicator for the read/write-set
+insertion/lookup times.
+*/
 #include "hash_table.h"
 #include "tl2/tl2.h"
 #include <gtest/gtest.h>
