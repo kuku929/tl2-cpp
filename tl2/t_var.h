@@ -18,6 +18,8 @@ public:
   TVar(T data) : m_data(std::move(data)) {}
   TVar(const TVar<T> &other) noexcept { this->m_data = other.m_data; }
   TVar(TVar<T> &&other) noexcept { this->m_data = std::move(other.m_data); }
+  // Otherwise TSan will flag optimistic read as a data race.
+  __attribute__((no_sanitize_thread))
   explicit operator T() const {
     /*
     We do it this way to encourage the compiler to
@@ -31,9 +33,15 @@ public:
     if (std::optional<T *> entry = log.value_at(&m_data); entry.has_value())
       result = *entry.value();
     else {
-      mutex.lock();
-      result = m_data;
-      mutex.unlock();
+      if constexpr (std::is_trivial_v<T>) {
+        // fast path for trivial data types.
+        result = m_data;
+      } else {
+        // default to using locks, beats the point of a STM.
+        mutex.lock();
+        result = m_data;
+        mutex.unlock();
+      }
     }
     return result;
   }

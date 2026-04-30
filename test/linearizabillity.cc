@@ -41,7 +41,6 @@ TEST(SimpleTests, Linearizability) {
     });
     t1.join();
     t2.join();
-    std::cout << val_a << ' ' << val_b << std::endl;
     ASSERT_TRUE((val_a == 1 && val_b == 1) || (val_a == 2 && val_b == 2));
   }
 }

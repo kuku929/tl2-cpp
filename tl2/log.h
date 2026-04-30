@@ -86,8 +86,13 @@ public:
       return;
     }
     // First write for this address in this transaction: stage a copied value.
-    T *obj =
-        new (store.allocate(sizeof(T), alignof(T))) T(std::forward<T>(val));
+    T *obj = static_cast<T *>(store.allocate(sizeof(T), alignof(T)));
+    if constexpr (std::is_trivial_v<T>) {
+      // fast path for trivial data types.
+      std::memcpy(obj, &val, sizeof(T));
+    } else {
+        new (obj) T(std::forward<T>(val));
+    }
     w.update(WriteOp(addr, obj));
   }
 

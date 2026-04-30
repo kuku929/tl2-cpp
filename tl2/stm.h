@@ -16,8 +16,10 @@ bool try_commit(const version_t read_version);
 
 inline void commit(version_t write_version) {
   for (auto op : log.writes()) {
-    op.move();
+    // first bump up the version so that other threads
+    // can abort if needed.
     hashtbl[op.addr()].unsafe_set_version(write_version);
+    op.move();
   }
 }
 

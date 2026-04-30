@@ -1,5 +1,8 @@
+exec ${PAGER:-/usr/bin/less} "$0" || exit 1
+Executing tests from //graphs/coarse_linked_list:bench
+-----------------------------------------------------------------------------
 threads,throughput
-1,1.32377e+06
-2,1.27353e+06
-4,1.3796e+06
-8,1.01792e+06
+1,531574
+2,528518
+4,743899
+8,798739

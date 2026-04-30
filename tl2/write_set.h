@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <type_traits>
 #include <vector>
 
 namespace tl2::internal {
@@ -32,7 +33,7 @@ public:
           return;
         }),
         m_move([](addr_t src, addr_t dest) noexcept -> void {
-          *reinterpret_cast<T *>(dest) = (*reinterpret_cast<T *>(src));
+          *reinterpret_cast<T *>(dest) = std::move(*reinterpret_cast<T *>(src));
         }),
         m_sz(sizeof(T)) {
     ;
