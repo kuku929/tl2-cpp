@@ -41,7 +41,7 @@ void benchmark(int threads, int ops_per_thread) {
 int main() {
   int ops = 100000;
 
-    vector<int> thread_counts = {1, 2, 4, 8, 12, 14, 16, 18, 20};
+  vector<int> thread_counts = {1, 2, 4, 8, 12, 14, 16, 18, 20};
 
   cout << "threads,throughput" << endl;
 

@@ -54,9 +54,7 @@ public:
 
   void clear() override { m_vec.clear(); }
 
-  void update(const ReadOp &op) override {
-    m_vec.push_back(op);
-  }
+  void update(const ReadOp &op) override { m_vec.push_back(op); }
 
   std::size_t size() const { return m_vec.size(); }
 

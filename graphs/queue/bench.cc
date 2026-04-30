@@ -10,11 +10,11 @@ using namespace std;
 using namespace tl2;
 
 void benchmark(int threads, int ops_per_thread) {
-    STMQueue<int> q;
+  STMQueue<int> q;
 
-    vector<thread> ts;
-    
-    auto start = chrono::high_resolution_clock::now();
+  vector<thread> ts;
+
+  auto start = chrono::high_resolution_clock::now();
 
   for (int t = 0; t < threads; t++) {
     ts.emplace_back([&]() {

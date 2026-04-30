@@ -1,9 +1,9 @@
 #pragma once
 #include "types.h"
 #include "write_set.h"
+#include <ankerl/unordered_dense.h>
 #include <atomic>
 #include <thread>
-#include <ankerl/unordered_dense.h>
 #include <vector>
 
 namespace tl2::internal {

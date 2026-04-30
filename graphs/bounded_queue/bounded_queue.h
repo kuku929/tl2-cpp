@@ -15,27 +15,25 @@ public:
   bool try_enq(const T &x) {
     bool success = false;
 
-        tl2::atomically([&]() {
-            success = enq_tx(x);
-        });
+    tl2::atomically([&]() { success = enq_tx(x); });
 
     return success;
   }
 
-    // returns false if the queue is empty, otherwise returns true and sets out
-    bool try_deq(T& out) {
-        bool success = false;
+  // returns false if the queue is empty, otherwise returns true and sets out
+  bool try_deq(T &out) {
+    bool success = false;
 
-        tl2::atomically([&]() {
-            auto res = deq_tx();
-            if (res.first) {
-                out = res.second;
-                success = true;
-            }
-        });
+    tl2::atomically([&]() {
+      auto res = deq_tx();
+      if (res.first) {
+        out = res.second;
+        success = true;
+      }
+    });
 
-        return success;
-    }
+    return success;
+  }
 
   size_t capacity() const { return _capacity; }
 
@@ -47,33 +45,33 @@ public:
     return size;
   }
 
-    // Batch enqueue/dequeue in a single transaction for better performance
-    // Usage: atomically([&]() { q.enq_tx(x); q.deq_tx(); });
-    bool enq_tx(const T& x) {
-        size_t h = static_cast<size_t>(head);
-        size_t t = static_cast<size_t>(tail);
+  // Batch enqueue/dequeue in a single transaction for better performance
+  // Usage: atomically([&]() { q.enq_tx(x); q.deq_tx(); });
+  bool enq_tx(const T &x) {
+    size_t h = static_cast<size_t>(head);
+    size_t t = static_cast<size_t>(tail);
 
-        if (t - h == _capacity) {
-            return false;
-        }
-
-        items[t % _capacity] = x;
-        tail = t + 1;
-        return true;
+    if (t - h == _capacity) {
+      return false;
     }
 
-    std::pair<bool, T> deq_tx() {
-        size_t h = static_cast<size_t>(head);
-        size_t t = static_cast<size_t>(tail);
+    items[t % _capacity] = x;
+    tail = t + 1;
+    return true;
+  }
 
-        if (t == h) {
-            return {false, T()};
-        }
+  std::pair<bool, T> deq_tx() {
+    size_t h = static_cast<size_t>(head);
+    size_t t = static_cast<size_t>(tail);
 
-        auto result = static_cast<T>(items[h % _capacity]);
-        head = h + 1;
-        return {true, result};
+    if (t == h) {
+      return {false, T()};
     }
+
+    auto result = static_cast<T>(items[h % _capacity]);
+    head = h + 1;
+    return {true, result};
+  }
 
 private:
   const size_t _capacity;
