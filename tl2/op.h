@@ -125,6 +125,10 @@ public:
     return true;
   }
 
+  inline VersionLock *lock_ptr() const { return &hashtbl[m_addr]; }
+
+  inline void mark_owner() const { m_owner = std::this_thread::get_id(); }
+
   inline version_t get_version() const {
     if (std::this_thread::get_id() == m_owner)
       return hashtbl[m_addr].unsafe_get_version();

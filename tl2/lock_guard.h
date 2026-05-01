@@ -1,6 +1,7 @@
 #pragma once
 #include "op.h"
 #include "version_lock.h"
+#include <unordered_set>
 
 namespace tl2::internal {
 using namespace tl2::internal;
@@ -9,9 +10,16 @@ public:
   LockGuard(LocationSet &l) {
     l.stable_sort();
     m_locked.reserve(l.size());
+    std::unordered_set<const VersionLock *> locked;
+    locked.reserve(l.size());
     for (auto &loc : l) {
-      if (loc.lock())
-        m_locked.push_back(&loc);
+      const VersionLock *lock = loc.lock_ptr();
+      if (locked.insert(lock).second) {
+        if (loc.lock())
+          m_locked.push_back(&loc);
+      } else {
+        loc.mark_owner();
+      }
     }
   }
 
