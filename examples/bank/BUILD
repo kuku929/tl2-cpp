@@ -8,6 +8,14 @@ cc_library(
     deps = [
         "//tl2:tl2",
         "//zoo:hash_map"
+    ],
+    cxxopts = [
+        "-fsanitize=address",
+        "-fno-omit-frame-pointer",
+        "-g",
+    ],
+    linkopts = [
+        "-fsanitize=address",
     ]
 )
 
@@ -17,6 +25,14 @@ cc_library(
     hdrs = ["server.h", "account.h"],
     deps = [
         ":transaction"
+    ],
+    cxxopts = [
+        "-fsanitize=address",
+        "-fno-omit-frame-pointer",
+        "-g",
+    ],
+    linkopts = [
+        "-fsanitize=address",
     ]
 )
 
@@ -26,4 +42,12 @@ cc_binary(
     deps = [
         ":server"
     ],
+    cxxopts = [
+        "-fsanitize=address",
+        "-fno-omit-frame-pointer",
+        "-g",
+    ],
+    linkopts = [
+        "-fsanitize=address",
+    ]
 )

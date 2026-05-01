@@ -35,7 +35,10 @@ private:
 
 class Transfer : public AbstractTransaction {
 public:
-  Transfer(std::string src, std::string dest, int amt) : m_src(src), m_dest(dest), m_amt(amt) { ; }
+  Transfer(std::string src, std::string dest, int amt)
+      : m_src(src), m_dest(dest), m_amt(amt) {
+    ;
+  }
   void execute() const override;
   std::string src() { return m_src; }
   std::string dest() { return m_dest; }

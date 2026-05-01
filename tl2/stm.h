@@ -10,16 +10,13 @@
 namespace tl2 {
 using namespace tl2::internal;
 
-template <typename T>
-struct is_t_var : std::false_type {};
-template <typename T>
-struct is_t_var<TVar<T>> : std::true_type {};
+template <typename T> struct is_t_var : std::false_type {};
+template <typename T> struct is_t_var<TVar<T>> : std::true_type {};
 // Source - https://stackoverflow.com/a/67315413
 // Posted by songyuanyao
 // Retrieved 2026-05-01, License - CC BY-SA 4.0
 
-template <typename T>
-inline constexpr bool is_t_var_v = is_t_var<T>::value;
+template <typename T> inline constexpr bool is_t_var_v = is_t_var<T>::value;
 
 namespace internal {
 void commit(version_t write_version);
@@ -29,6 +26,7 @@ inline void commit(version_t write_version) {
   // One optimization is to construct the write
   // set when we construct the lock guard and use
   // it here.
+  auto &&log = manager.log;
   for (const Location &loc : log.locations()) {
     // first bump up the version so that other threads
     // can abort if needed.
@@ -40,6 +38,7 @@ inline void commit(version_t write_version) {
 }
 
 inline bool try_commit() {
+  auto &&log = manager.log;
   auto guard = make_lock_guard(log.locations());
   const auto write_version = global_clock.incr_version();
   if (write_version == manager.read_version() + 1) {
@@ -58,20 +57,21 @@ inline bool try_commit() {
   return true;
 }
 
-template <typename ...Args>
-inline void restore_args(const auto & saved, Args&... args) {
+template <typename... Args>
+inline void restore_args(const auto &saved, Args &...args) {
   std::apply(
-    [&](const auto&... saved_args) noexcept {
+      [&](const auto &...saved_args) noexcept {
         // Only restore arguments that are not TVars and
         // are references.
-      ([&]() noexcept {
-        if constexpr (! tl2::is_t_var_v<Args>) {
-          (args = saved_args);
-        }
-      }(), ...);
-    },
-    saved
-  );
+        (
+            [&]() noexcept {
+              if constexpr (!tl2::is_t_var_v<Args>) {
+                (args = saved_args);
+              }
+            }(),
+            ...);
+      },
+      saved);
 }
 
 template <typename... T>
@@ -79,17 +79,15 @@ inline constexpr bool are_copy_assignable_v =
     (std::is_copy_assignable_v<std::remove_reference_t<T>> && ...);
 
 } // namespace internal
+inline bool in_transaction() { return manager.in_transaction(); }
 
-inline bool in_transaction() {
-  return manager.in_transaction();
-}
-
-template <typename Transaction, typename ...Args>
-inline auto atomically(Transaction&& t, Args&... args) -> decltype(std::forward<Transaction>(t)()) {
+template <typename Transaction, typename... Args>
+inline auto atomically(Transaction &&t, Args &...args)
+    -> decltype(std::forward<Transaction>(t)()) {
   static_assert(tl2::internal::are_copy_assignable_v<Args...>,
-    "Restored arguments must be copy assignable");
+                "Restored arguments must be copy assignable");
   using ReturnType = decltype(t());
-  if(in_transaction()) {
+  if (in_transaction()) {
     /*
     Nested atomic calls can be flattened to a single big transaction.
     If we are nested then atomically() simple executes t().
@@ -104,11 +102,11 @@ inline auto atomically(Transaction&& t, Args&... args) -> decltype(std::forward<
   }
   const auto saved = std::make_tuple(args...);
   try { // try{} is zero-cost
-    if constexpr (! std::is_void_v<ReturnType>) {
+    if constexpr (!std::is_void_v<ReturnType>) {
       std::optional<ReturnType> ret;
       while (true) {
         manager.start_transaction();
-          ret = t();
+        ret = t();
         if (try_commit())
           break;
         tl2::internal::restore_args(saved, args...);
@@ -125,8 +123,9 @@ inline auto atomically(Transaction&& t, Args&... args) -> decltype(std::forward<
       }
       manager.end_transaction();
     }
-  } catch(const std::exception &e) {
-    std::cerr << "Exception occured during transaction: " << e.what() << std::endl;
+  } catch (const std::exception &e) {
+    std::cerr << "Exception occured during transaction: " << e.what()
+              << std::endl;
     manager.end_transaction();
     throw;
   }

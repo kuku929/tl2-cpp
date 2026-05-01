@@ -42,7 +42,8 @@ TEST(OrderedLinkedListTests, MultiThreadedReads) {
   std::atomic<bool> start{false};
 
   std::thread t1([&]() {
-    while (!start.load()) {}
+    while (!start.load()) {
+    }
     for (int i = 0; i < 2 * kPerThread; ++i) {
       if (!list.contains(i)) {
         ++failures;
@@ -51,7 +52,8 @@ TEST(OrderedLinkedListTests, MultiThreadedReads) {
   });
 
   std::thread t2([&]() {
-    while (!start.load()) {}
+    while (!start.load()) {
+    }
     for (int i = 0; i < 2 * kPerThread; ++i) {
       if (!list.contains(i)) {
         ++failures;

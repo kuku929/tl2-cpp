@@ -56,7 +56,8 @@ TEST(HashMapTests, MultiThreadedReads) {
   std::atomic<bool> start{false};
 
   std::thread t1([&]() {
-    while (!start.load()) {}
+    while (!start.load()) {
+    }
     for (int i = 0; i < 2 * kPerThread; ++i) {
       if (!map.contains(i)) {
         ++failures;
@@ -65,7 +66,8 @@ TEST(HashMapTests, MultiThreadedReads) {
   });
 
   std::thread t2([&]() {
-    while (!start.load()) {}
+    while (!start.load()) {
+    }
     for (int i = 0; i < 2 * kPerThread; ++i) {
       if (map.get(i) != i * 10) {
         ++failures;

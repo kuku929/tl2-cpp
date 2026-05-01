@@ -26,8 +26,10 @@ public:
   }
 
   ~OrderedLinkedList() {
-    delete m_head; m_head = nullptr;
-    delete m_tail; m_tail = nullptr;
+    delete m_head;
+    m_head = nullptr;
+    delete m_tail;
+    m_tail = nullptr;
   }
 
   bool add(const T &item) {
@@ -49,26 +51,30 @@ public:
   bool remove(const T &item) {
     bool result = false;
     int key = hash(item);
-    tl2::atomically([&]() {
-      auto [pred, curr] = locate(m_head, key);
-      if (curr->key == key) {
-        pred->next = static_cast<Node *>(curr->next);
-        result = true;
-      }
-    }, result);
+    tl2::atomically(
+        [&]() {
+          auto [pred, curr] = locate(m_head, key);
+          if (curr->key == key) {
+            pred->next = static_cast<Node *>(curr->next);
+            result = true;
+          }
+        },
+        result);
     return result;
   }
 
   bool contains(const T &item) {
     bool result = false;
     int key = hash(item);
-    tl2::atomically([&]() {
-      Node *curr = m_head;
-      while (curr->key < key) {
-        curr = static_cast<Node *>(curr->next);
-      }
-      result = (curr->key == key);
-    }, result);
+    tl2::atomically(
+        [&]() {
+          Node *curr = m_head;
+          while (curr->key < key) {
+            curr = static_cast<Node *>(curr->next);
+          }
+          result = (curr->key == key);
+        },
+        result);
     return result;
   }
 

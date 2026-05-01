@@ -91,9 +91,4 @@ private:
   LocationSetT l;
   StorePolicy store;
 };
-// inline static thread_local Log<LocationOrderedSet, SynchronizedPoolPolicy>
-// log; inline static thread_local Log<LocationOrderedSet, PerThreadPolicy> log;
-inline static thread_local Log<LocationHashVectorSet, PerThreadPolicy> log;
-// inline static thread_local Log<LocationHashVectorSet, SynchronizedPoolPolicy>
-// log;
 } // namespace tl2::internal

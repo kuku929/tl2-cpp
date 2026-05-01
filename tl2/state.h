@@ -2,6 +2,7 @@
 #include "log.h"
 #include "types.h"
 #include <exception>
+#include <iostream> // DEBUG
 
 namespace tl2 {
 class invalid_access : public std::exception {
@@ -32,12 +33,10 @@ public:
 
   void end_transaction() {
     log.clear();
-    context.state = STATE::ZOMBIE;
+    context.clear();
   }
 
-  inline bool in_transaction() {
-    return (context.state == STATE::RUNNING);
-  }
+  inline bool in_transaction() { return (context.state == STATE::RUNNING); }
 
   inline version_t read_version() { return context.rv; }
 
@@ -48,6 +47,7 @@ public:
       throw tl2::invalid_access();
     }
   }
+  Log<LocationHashVectorSet, PerThreadPolicy> log;
 
 private:
   class Context {
@@ -59,5 +59,5 @@ private:
       rv = static_cast<version_t>(0);
     }
   } context;
-} inline static thread_local manager;
+} inline thread_local manager;
 } // namespace tl2::internal

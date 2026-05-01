@@ -17,22 +17,22 @@ void Server::spin() {
   for (int _ = 0; _ < num_transactions; ++_) {
     auto transaction = [&]() {
       switch (random_int(1)) {
-        case 0:
-          return std::function<void(void)>([&]() {
-            Add t = construct_add();
-            logger.log_add(t.name(), t.amt());
-            t.execute();
-          });
-        case 1:
-          return std::function<void(void)>([&]() -> void {
-            Withdraw t = construct_withdraw();
-            logger.log_withdraw(t.name(), t.amt());
-            t.execute();
-          });
+      case 0:
+        return std::function<void(void)>([&]() {
+          Add t = construct_add();
+          logger.log_add(t.name(), t.amt());
+          t.execute();
+        });
+      case 1:
+        return std::function<void(void)>([&]() -> void {
+          Withdraw t = construct_withdraw();
+          logger.log_withdraw(t.name(), t.amt());
+          t.execute();
+        });
       }
       return std::function<void(void)>([&]() {
-        Withdraw t = construct_withdraw();
-        logger.log_withdraw(t.name(), t.amt());
+        Transfer t = construct_transfer();
+        logger.log_transfer(t.src(), t.dest(), t.amt());
         t.execute();
       });
     }();
@@ -41,8 +41,7 @@ void Server::spin() {
                     [](std::thread &t) { t.join(); });
       running.clear();
     }
-    running.emplace_back(
-        std::thread(transaction));
+    running.emplace_back(std::thread(transaction));
     std::this_thread::sleep_for(std::chrono::milliseconds(random_int(10)));
   }
   std::for_each(running.begin(), running.end(),
@@ -62,10 +61,8 @@ int Server::random_int(int max, int min) {
   return dist(rng);
 }
 
-Withdraw Server::construct_withdraw() {
-  return Withdraw(random_name(), random_int(1000));
-}
+Withdraw Server::construct_withdraw() { return Withdraw(random_name(), random_int(1000)); }
 
-Add Server::construct_add() {
-  return Add(random_name(), random_int(1000));
-}
+Transfer Server::construct_transfer() { return Transfer(random_name(), random_name(), random_int(1000)); }
+
+Add Server::construct_add() { return Add(random_name(), random_int(1000)); }
