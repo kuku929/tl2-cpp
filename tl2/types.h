@@ -1,6 +1,7 @@
 #pragma once
 #include <concepts>
 #include <cstdint>
+#include <type_traits>
 
 namespace tl2::internal {
 using uint = std::uint32_t;
@@ -11,5 +12,4 @@ using addr_t = std::uintptr_t;
 
 template <typename T>
 concept Constructible = std::move_constructible<T>;
-template <typename T> constexpr bool is_primitive_v = std::is_fundamental_v<T>;
 } // namespace tl2::internal

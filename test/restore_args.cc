@@ -1,58 +1,54 @@
 /*
-Test that atomically restores lvalue arguments on retry.
+Test that atomically() restores lvalue arguments on retry.
 */
 
-#include "tl2/tl2.h"
 #include <atomic>
 #include <gtest/gtest.h>
 #include <thread>
+#include "tl2/tl2.h"
 
 using namespace tl2;
 
+struct A {
+  A(): a(0) {;}
+  A(const A& other) {
+    a = other.a;
+    std::cout << "copy()" << std::endl;
+  }
+  A& operator=(const A&) = default;
+  int a;
+};
+
+
 TEST(SimpleTests, RestoreArgs) {
-  TVar<int> x(1);
-  const int iters = 20000;
-  int violations=0;
-  std::atomic<bool> start{false};
+  const int iters = 1;
+  for(int _ = 0; _ < iters; ++_) {
+    std::atomic<bool> start;
+    start.store(false, std::memory_order_release);
+    bool acquired{false};
+    A test;
+    TVar<int> lock(0);
 
-  std::thread writer([&]() {
-    while (!start.load(std::memory_order_acquire)) {}
+    std::thread t1([&]() noexcept {
+      atomically([&]() {
+        while (!start.load(std::memory_order_acquire)) {}
+        lock = 1;
+      });
+    });
 
-    for (int i = 0; i < iters; ++i) {
-      atomically([&]() { x = (i & 1); });
-    }
-  });
+    std::thread t2([&]() noexcept {
+      atomically([&]() {
+        if(static_cast<int>(lock) == 0) {
+          start.store(true, std::memory_order_release);
+          while(static_cast<int>(lock) == 0) {}
+          acquired = true;
+        }
+      }, acquired, test);
+    });
 
-  std::thread reader([&]() {
-    while (!start.load(std::memory_order_acquire)) {}
+    t1.join();
+    t2.join();
 
-    for (int i = 0; i < iters; ++i) {
-      bool flag = false;
-      int seen = -1;
-      atomically(
-          [&](bool& f, int& out) {
-            int v = static_cast<int>(x);
-            out = v;
-            if (v == 1) {
-              f = true;
-            }
-            volatile int spin = 0;
-            for (int k = 0; k < 500; ++k) {
-              spin += k;
-            }
-            (void)spin;
-          },
-          flag, seen);
-
-      if ((seen == 1 && !flag) || (seen == 0 && flag)) {
-        violations++;
-      }
-    }
-  });
-
-  start.store(true, std::memory_order_release);
-  writer.join();
-  reader.join();
-
-  EXPECT_EQ(violations, 0);
+    EXPECT_FALSE(acquired);
+  }
 }
