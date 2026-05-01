@@ -31,9 +31,11 @@ void Server::spin() {
           });
       }
       return std::function<void(void)>([&]() {
-        construct_add().execute();
+        Withdraw t = construct_withdraw();
+        logger.log_withdraw(t.name(), t.amt());
+        t.execute();
       });
-    };
+    }();
     if (running.size() == MAX_THREADS) {
       std::for_each(running.begin(), running.end(),
                     [](std::thread &t) { t.join(); });
@@ -41,10 +43,11 @@ void Server::spin() {
     }
     running.emplace_back(
         std::thread(transaction));
-    std::this_thread::sleep_for(std::chrono::milliseconds(random_int(100)));
+    std::this_thread::sleep_for(std::chrono::milliseconds(random_int(10)));
   }
   std::for_each(running.begin(), running.end(),
                 [](std::thread &t) { t.join(); });
+  running.clear();
 }
 
 std::string Server::random_name() {

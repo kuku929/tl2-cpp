@@ -3,7 +3,7 @@
 int main() {
   Server s;
   bool ok = true;
-  for (int i = 0; i < 1; ++i) {
+  for (int i = 0; i < 100; ++i) {
     s.spin();
     ok &= s.logger.check();
   }

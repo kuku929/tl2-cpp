@@ -21,9 +21,11 @@ public:
     void log_withdraw(std::string name, int amt) { m_accounts[name] += amt; }
     bool check() {
       bool ok = true;
-      std::cout << "Expected balance : " << std::format("{0}", m_accounts) << std::endl;
       for(const auto &[name, balance] : m_accounts) {
-        if(accounts.get(name).balance != balance) {
+        if(auto actual_bal = accounts.get(name).balance; actual_bal != balance) {
+          std::cout << "~" << std::endl;
+          std::cout << "Expected balance : " << std::format("{0}", std::pair(name, balance)) << std::endl;
+          std::cout << "Actual   balance : " << std::format("{0}", std::pair(name, actual_bal)) << std::endl;
           ok = false;
         }
       }
