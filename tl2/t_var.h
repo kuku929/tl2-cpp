@@ -72,6 +72,10 @@ public:
   }
 
   T unsafe_get() {
+    /*
+    This is meant for use in destructors of static
+    objects. Refrain to use it anywhere else.
+    */
     return m_data;
   }
 

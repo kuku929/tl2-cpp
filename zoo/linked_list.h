@@ -3,6 +3,7 @@
 #include "tl2/tl2.h"
 #include <climits>
 #include <functional>
+#include <memory>
 #include <utility>
 
 namespace zoo {
@@ -28,11 +29,15 @@ public:
   }
 
   void add(const T &item) {
-    Node *node = new Node(item);
+    // this is a bug. If add() is called 
+    // inside a transaction then this allocation
+    // will never free. This is a bug and will
+    // cause an error with Asan.
+    Node * node = new Node(item);
     tl2::atomically([&]() {
       Node *head_val = static_cast<Node *>(m_head);
       node->next = head_val;
-      m_head = node;
+      m_head = node.get();
       m_sz = static_cast<std::size_t>(m_sz) + 1;
     });
   }

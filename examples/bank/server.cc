@@ -8,12 +8,13 @@
 #include <thread>
 #include <vector>
 
-const int MAX_THREADS = 2;
+const int MAX_THREADS = 8;
 
 void Server::spin() {
   // in one iteration we spawn some
   // number of threads and await.
   int num_transactions = random_int(2 * MAX_THREADS);
+  std::cout << std::format("using {0} threads.", num_transactions) << std::endl;
   for (int _ = 0; _ < num_transactions; ++_) {
     auto transaction = [&]() {
       switch (random_int(1)) {
