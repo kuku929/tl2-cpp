@@ -15,6 +15,6 @@ cc_binary(
     srcs = ["bench.cc"],
     deps = [
         ":linked_list_impls",
-        "//zoo:zoo",
+        "//zoo:linked_list",
     ],
 )

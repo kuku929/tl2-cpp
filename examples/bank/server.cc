@@ -3,25 +3,44 @@
 #include "stm.h"
 #include <algorithm>
 #include <chrono>
+#include <memory>
 #include <random>
 #include <thread>
+#include <vector>
 
 const int MAX_THREADS = 2;
 
 void Server::spin() {
   // in one iteration we spawn some
   // number of threads and await.
-  // for now only withdraw supported.
   int num_transactions = random_int(2 * MAX_THREADS);
   for (int _ = 0; _ < num_transactions; ++_) {
-    auto transaction = construct_withdraw();
+    auto transaction = [&]() {
+      switch (random_int(1)) {
+        case 0:
+          return std::function<void(void)>([&]() {
+            Add t = construct_add();
+            logger.log_add(t.name(), t.amt());
+            t.execute();
+          });
+        case 1:
+          return std::function<void(void)>([&]() -> void {
+            Withdraw t = construct_withdraw();
+            logger.log_withdraw(t.name(), t.amt());
+            t.execute();
+          });
+      }
+      return std::function<void(void)>([&]() {
+        construct_add().execute();
+      });
+    };
     if (running.size() == MAX_THREADS) {
       std::for_each(running.begin(), running.end(),
                     [](std::thread &t) { t.join(); });
       running.clear();
     }
     running.emplace_back(
-        std::thread([transaction]() { transaction.execute(); }));
+        std::thread(transaction));
     std::this_thread::sleep_for(std::chrono::milliseconds(random_int(100)));
   }
   std::for_each(running.begin(), running.end(),
@@ -42,4 +61,8 @@ int Server::random_int(int max, int min) {
 
 Withdraw Server::construct_withdraw() {
   return Withdraw(random_name(), random_int(1000));
+}
+
+Add Server::construct_add() {
+  return Add(random_name(), random_int(1000));
 }
