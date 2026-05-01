@@ -21,7 +21,7 @@ def _stm_test_impl(name, visibility, srcs):
         visibility = visibility
     )
 
-        # TSan version
+    # TSan version
     cc_test(
         name = name + "_tsan",
         size = "small",

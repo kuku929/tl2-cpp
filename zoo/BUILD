@@ -15,6 +15,6 @@ cc_library(
 cc_library(
     name = "hash_map",
     hdrs = ["hash_map.h"],
-    deps = ["//tl2:tl2"],
+    deps = ["//tl2:tl2", ":linked_list"],
     visibility = ["//visibility:public"],
 )

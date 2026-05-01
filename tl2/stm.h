@@ -4,6 +4,7 @@
 #include "state.h"
 #include "t_var.h"
 #include <cstring>
+#include <exception>
 #include <tuple>
 #include <type_traits>
 namespace tl2 {
@@ -79,32 +80,55 @@ inline constexpr bool are_copy_assignable_v =
 
 } // namespace internal
 
+inline bool in_transaction() {
+  return manager.in_transaction();
+}
+
 template <typename Transaction, typename ...Args>
 inline auto atomically(Transaction&& t, Args&... args) -> decltype(std::forward<Transaction>(t)()) {
   static_assert(tl2::internal::are_copy_assignable_v<Args...>,
     "Restored arguments must be copy assignable");
   using ReturnType = decltype(t());
+  if(in_transaction()) {
+    /*
+    Nested atomic calls can be flattened to a single big transaction.
+    If we are nested then atomically() simple executes t().
+    We don't need to worry about restoring these arguments. because:
+      Case I : the arguments are outside the parent transaction
+        It is the parent transaction that will restore the args if need be.
+      Case II : arguments are inside the parent transaction
+        In the case of abort, the stack rewinds and we start anew so these
+        variables are "automatically" restored.
+    */
+    return t();
+  }
   const auto saved = std::make_tuple(args...);
-  if constexpr (! std::is_void_v<ReturnType>) {
-    std::optional<ReturnType> ret;
-    while (true) {
-      manager.start_transaction();
-      ret = t();
-      if (try_commit())
-        break;
-      tl2::internal::restore_args(saved, args...);
+  try { // try{} is zero-cost
+    if constexpr (! std::is_void_v<ReturnType>) {
+      std::optional<ReturnType> ret;
+      while (true) {
+        manager.start_transaction();
+          ret = t();
+        if (try_commit())
+          break;
+        tl2::internal::restore_args(saved, args...);
+      }
+      manager.end_transaction();
+      return ret.value();
+    } else {
+      while (true) {
+        manager.start_transaction();
+        t();
+        if (try_commit())
+          break;
+        tl2::internal::restore_args(saved, args...);
+      }
+      manager.end_transaction();
     }
+  } catch(const std::exception &e) {
+    std::cerr << "Exception occured during transaction: " << e.what() << std::endl;
     manager.end_transaction();
-    return ret.value();
-  } else {
-    while (true) {
-      manager.start_transaction();
-      t();
-      if (try_commit())
-        break;
-      tl2::internal::restore_args(saved, args...);
-    }
-    manager.end_transaction();
+    throw;
   }
 }
 } // namespace tl2

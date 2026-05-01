@@ -35,6 +35,10 @@ public:
     context.state = STATE::ZOMBIE;
   }
 
+  inline bool in_transaction() {
+    return (context.state == STATE::RUNNING);
+  }
+
   inline version_t read_version() { return context.rv; }
 
   void assert_in_transaction() {

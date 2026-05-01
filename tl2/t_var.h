@@ -20,6 +20,7 @@ public:
   TVar(TVar<T> &&other) noexcept { this->m_data = std::move(other.m_data); }
   // Otherwise TSan will flag optimistic read as a data race.
   __attribute__((no_sanitize_thread)) explicit operator T() const {
+if constexpr (std::is_default_constructible_v<T>) {
     /*
     We do it this way to encourage the compiler to
     perform copy elision. There is only one copy
@@ -43,6 +44,29 @@ public:
       }
     }
     return result;
+} else {
+   /*
+   Since T is not default constructible, fallback
+   to a slower path.
+   */
+    manager.assert_in_transaction();
+    log.append_read(&m_data);
+    if (std::optional<T *> entry = log.value_at(&m_data); entry.has_value()) {
+      return *entry.value();
+    } else {
+      if constexpr (std::is_trivial_v<T>) {
+        // fast path for trivial data types.
+        return m_data;
+      } else {
+        VersionLock &mutex = hashtbl[to_addr(&m_data)];
+        // default to using locks, beats the point of a STM.
+        mutex.lock();
+        T result = m_data;
+        mutex.unlock();
+        return result;
+      }
+    }
+}
   }
 
   TVar &operator=(T val) {

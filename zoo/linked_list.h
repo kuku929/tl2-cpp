@@ -12,6 +12,7 @@ template <typename T> class LinkedList {
     tl2::TVar<T> item;
     tl2::TVar<Node *> next;
     Node(const T &v, Node *n) : item(v), next(n) {}
+    Node(const T &v) : item(v), next(nullptr) {}
   };
 
 public:
@@ -36,7 +37,6 @@ public:
       node->next = head_val;
       m_head = node;
       m_sz = static_cast<std::size_t>(m_sz) + 1;
-      &m_head->item;
     });
   }
 
@@ -90,13 +90,13 @@ public:
   void update(const T &curr_item, const T& next_item) {
     Node *curr = tl2::atomically([&]() {
       Node *curr = static_cast<Node *>(m_head);
-      while (curr != nullptr && curr->item != curr_item) {
+      while (curr != nullptr && static_cast<T>(curr->item) != curr_item) {
         curr = static_cast<Node *>(curr->next);
       }
       return curr;
     });
     if(curr != nullptr) {
-    &curr->item = next_item;
+      curr->item = next_item;
     }
   }
 
