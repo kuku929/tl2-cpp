@@ -1,4 +1,5 @@
 #pragma once
+#include "stm.h"
 #include "tl2/tl2.h"
 #include <climits>
 #include <functional>
@@ -6,73 +7,116 @@
 
 namespace zoo {
 
-template <typename T> class ConcurrentLinkedList {
+template <typename T> class LinkedList {
   struct Node {
-    T item;
-    int key;
+    tl2::TVar<T> item;
     tl2::TVar<Node *> next;
-    Node(const T &v, int k, Node *n) : item(v), key(k), next(n) {}
+    Node(const T &v, Node *n) : item(v), next(n) {}
   };
 
 public:
-  ConcurrentLinkedList() {
-    m_tail = new Node(T{}, INT_MAX, nullptr);
-    m_head = new Node(T{}, INT_MIN, m_tail);
+  LinkedList() : m_head(nullptr)
+  {;}
+
+  ~LinkedList() {
+    tl2::atomically([&]() {
+        Node *curr = static_cast<Node *>(m_head);
+        while(curr != nullptr) {
+            Node *next = static_cast<Node *>(curr->next);
+            delete curr;
+            curr = next;
+        }
+    });
   }
 
-  bool add(const T &item) {
-    bool result = false;
+  void add(const T &item) {
+    Node* node = new Node(item, head_val);
     tl2::atomically([&]() {
-      int key = std::hash<T>{}(item);
-      auto [pred, curr] = locate(m_head, key);
-      if (curr->key == key) {
-        result = false;
-        return;
-      }
-      auto *node = new Node(item, key, curr);
-      pred->next = node;
-      result = true;
+      Node * head_val = static_cast<Node *>(m_head);
+      m_head = node;
+      m_sz = static_cast<std::size_t>(m_sz) + 1;
+      &m_head->item;
     });
-    return result;
   }
 
   bool remove(const T &item) {
     bool result = false;
-    tl2::atomically([&]() {
-      int key = std::hash<T>{}(item);
-      auto [pred, curr] = locate(m_head, key);
-      if (curr->key == key) {
-        pred->next = static_cast<Node *>(curr->next);
-        result = true;
-      } else {
-        result = false;
+    Node *node = tl2::atomically([&]() {
+      Node *head = static_cast<Node *>(m_head);
+      auto [pred, curr] = _locate(head, item);
+      if (curr != nullptr) {
+        m_sz = static_cast<std::size_t>(m_sz) - 1;
+        if(curr != head) {
+            pred->next = static_cast<Node *>(curr->next);
+            result = true;
+            return curr;
+        } else {
+            Node *old_head = static_cast<Node *>(m_head);
+            Node *next_head = static_cast<Node *>(old_head->next);
+            m_head = next_head;
+            result = true;
+            return old_head;
+        }
       }
-    });
+      return nullptr;
+    }, result);
+    delete node;
     return result;
   }
 
   bool contains(const T &item) {
     bool result = false;
     tl2::atomically([&]() {
-      int key = std::hash<T>{}(item);
-      Node *curr = m_head;
-      while (curr->key < key) {
+      Node *curr = static_cast<Node *>(m_head);
+      while (curr != nullptr && static_cast<T>(curr->item) != item) {
         curr = static_cast<Node *>(curr->next);
       }
-      result = (curr->key == key);
-    });
+      result = (curr != nullptr);
+    }, result);
     return result;
   }
 
+  std::optional<T> get(const T &item) {
+    return tl2::atomically([&]() {
+      Node *curr = static_cast<Node *>(m_head);
+      while (curr != nullptr && static_cast<T>(curr->item) != item) {
+        curr = static_cast<Node *>(curr->next);
+      }
+      return (curr != nullptr) ? std::optional<T>(static_cast<T>(curr->item)) : std::nullopt;
+    });
+  }
+
+  void update(const T &curr_item, const T& next_item) {
+    Node *curr = tl2::atomically([&]() {
+      Node *curr = static_cast<Node *>(m_head);
+      while (curr != nullptr && curr->item != curr_item) {
+        curr = static_cast<Node *>(curr->next);
+      }
+      return curr;
+    });
+    if(curr != nullptr) {
+    &curr->item = next_item;
+    }
+  }
+
+  std::size_t size() {
+    return tl2::atomically([this]() {
+        return static_cast<std::size_t>(this->m_sz);
+    });
+  }
+
 private:
-  Node *m_head{};
-  Node *m_tail{};
+  tl2::TVar<Node *> m_head;
+  tl2::TVar<std::size_t> m_sz;
 
   // Must be called only inside a transaction
-  std::pair<Node *, Node *> locate(Node *start, int key) {
+  inline std::pair<Node *, Node *> _locate(Node *start, const T& item) {
+    if(start == nullptr) {
+        return {nullptr, nullptr};
+    }
     Node *pred = start;
     Node *curr = static_cast<Node *>(pred->next);
-    while (curr->key < key) {
+    while (curr != nullptr && curr->item != item) {
       pred = curr;
       curr = static_cast<Node *>(curr->next);
     }

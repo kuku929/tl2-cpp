@@ -81,7 +81,8 @@ inline constexpr bool are_copy_assignable_v =
 
 template <typename Transaction, typename ...Args>
 inline auto atomically(Transaction&& t, Args&... args) -> decltype(std::forward<Transaction>(t)()) {
-  static_assert(tl2::internal::are_copy_assignable_v<Args...>, "Restored arguments must be copy assignable");
+  static_assert(tl2::internal::are_copy_assignable_v<Args...>,
+    "Restored arguments must be copy assignable");
   using ReturnType = decltype(t());
   const auto saved = std::make_tuple(args...);
   if constexpr (! std::is_void_v<ReturnType>) {
