@@ -106,30 +106,22 @@ inline auto atomically(Transaction &&t, Args &...args)
   try { // try{} is zero-cost
     if constexpr (!std::is_void_v<ReturnType>) {
       std::optional<ReturnType> ret;
-      std::size_t retries = 0;
       while (true) {
         manager.start_transaction();
         ret = t();
         if (try_commit())
           break;
         tl2::internal::restore_args(saved, args...);
-        if (++retries >= 3) {
-          std::this_thread::sleep_for(std::chrono::microseconds(50));
-        }
       }
       manager.end_transaction();
       return ret.value();
     } else {
-      std::size_t retries = 0;
       while (true) {
         manager.start_transaction();
         t();
         if (try_commit())
           break;
         tl2::internal::restore_args(saved, args...);
-        if (++retries >= 3) {
-          std::this_thread::sleep_for(std::chrono::microseconds(50));
-        }
       }
       manager.end_transaction();
     }
