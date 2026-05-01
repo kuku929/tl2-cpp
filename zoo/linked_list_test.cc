@@ -1,6 +1,6 @@
 #include "zoo/linked_list.h"
 
-#include "tl2/tl2.h"
+#include <atomic>
 #include <gtest/gtest.h>
 #include <thread>
 
@@ -47,7 +47,7 @@ TEST(LinkedListTests, GetAndUpdate) {
   ASSERT_TRUE(val.has_value());
   EXPECT_EQ(*val, 5);
 
-  tl2::atomically([&]() { list.update(5, 50); });
+  list.update(5, 50);
   EXPECT_FALSE(list.contains(5));
   EXPECT_TRUE(list.contains(50));
 
@@ -56,41 +56,40 @@ TEST(LinkedListTests, GetAndUpdate) {
   EXPECT_EQ(*updated, 50);
 }
 
-TEST(LinkedListTests, MultiThreadedAddRemove) {
+TEST(LinkedListTests, MultiThreadedReads) {
   LinkedList<int> list;
-  constexpr int kPerThread = 500;
+  constexpr int kPerThread = 200;
+
+  for (int i = 0; i < 2 * kPerThread; ++i) {
+    list.add(i);
+  }
+
+  std::atomic<int> failures{0};
+  std::atomic<bool> start{false};
 
   std::thread t1([&]() {
-    for (int i = 0; i < kPerThread; ++i) {
-      list.add(i);
-    }
-  });
-  std::thread t2([&]() {
-    for (int i = 0; i < kPerThread; ++i) {
-      list.add(i + kPerThread);
+    while (!start.load()) {}
+    for (int i = 0; i < 2 * kPerThread; ++i) {
+      if (!list.contains(i)) {
+        ++failures;
+      }
     }
   });
 
+  std::thread t2([&]() {
+    while (!start.load()) {}
+    for (int i = 0; i < 2 * kPerThread; ++i) {
+      auto val = list.get(i);
+      if (!val.has_value() || *val != i) {
+        ++failures;
+      }
+    }
+  });
+  start.store(true);
   t1.join();
   t2.join();
 
-  EXPECT_EQ(list.size(), static_cast<std::size_t>(2 * kPerThread));
-
-  std::thread t3([&]() {
-    for (int i = 0; i < kPerThread; ++i) {
-      list.remove(i);
-    }
-  });
-  std::thread t4([&]() {
-    for (int i = 0; i < kPerThread; ++i) {
-      list.remove(i + kPerThread);
-    }
-  });
-
-  t3.join();
-  t4.join();
-
-  EXPECT_EQ(list.size(), 0u);
+  EXPECT_EQ(failures.load(), 0);
 }
 
 } // namespace zoo

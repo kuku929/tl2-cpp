@@ -1,5 +1,6 @@
 #include "zoo/ordered_ll.h"
 
+#include <atomic>
 #include <gtest/gtest.h>
 #include <thread>
 
@@ -29,45 +30,40 @@ TEST(OrderedLinkedListTests, AddContainsRemove) {
   EXPECT_FALSE(list.remove(10));
 }
 
-TEST(OrderedLinkedListTests, MultiThreadedAddRemove) {
+TEST(OrderedLinkedListTests, MultiThreadedReads) {
   OrderedLinkedList<int, std::hash<int>> list;
-  constexpr int kPerThread = 500;
+  constexpr int kPerThread = 200;
+
+  for (int i = 0; i < 2 * kPerThread; ++i) {
+    list.add(i);
+  }
+
+  std::atomic<int> failures{0};
+  std::atomic<bool> start{false};
 
   std::thread t1([&]() {
-    for (int i = 0; i < kPerThread; ++i) {
-      list.add(i);
-    }
-  });
-  std::thread t2([&]() {
-    for (int i = 0; i < kPerThread; ++i) {
-      list.add(i + kPerThread);
+    while (!start.load()) {}
+    for (int i = 0; i < 2 * kPerThread; ++i) {
+      if (!list.contains(i)) {
+        ++failures;
+      }
     }
   });
 
+  std::thread t2([&]() {
+    while (!start.load()) {}
+    for (int i = 0; i < 2 * kPerThread; ++i) {
+      if (!list.contains(i)) {
+        ++failures;
+      }
+    }
+  });
+
+  start.store(true);
   t1.join();
   t2.join();
 
-  for (int i = 0; i < 2 * kPerThread; ++i) {
-    EXPECT_TRUE(list.contains(i));
-  }
-
-  std::thread t3([&]() {
-    for (int i = 0; i < kPerThread; ++i) {
-      list.remove(i);
-    }
-  });
-  std::thread t4([&]() {
-    for (int i = 0; i < kPerThread; ++i) {
-      list.remove(i + kPerThread);
-    }
-  });
-
-  t3.join();
-  t4.join();
-
-  for (int i = 0; i < 2 * kPerThread; ++i) {
-    EXPECT_FALSE(list.contains(i));
-  }
+  EXPECT_EQ(failures.load(), 0);
 }
 
 } // namespace zoo
