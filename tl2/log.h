@@ -1,9 +1,8 @@
 #pragma once
 #include "hash_table.h"
 #include "memory.h"
-#include "read_set.h"
+#include "op.h"
 #include "types.h"
-#include "write_set.h"
 #include <cassert>
 #include <cstring>
 #include <memory>
@@ -51,17 +50,16 @@ inline void print(T &obj, char end = '\n') {
 
 namespace tl2::internal {
 using namespace tl2::internal;
-template <typename WriteSetT, typename ReadSetT, typename StorePolicy>
-class Log {
+template <typename LocationSetT, typename StorePolicy> class Log {
 public:
-  Log() : r(), w(), store(StorePolicy()) {}
+  Log() : l(), store(StorePolicy()) {}
 
   template <typename T>
   std::optional<T *> __attribute__((always_inline))
   value_at(const T *addr) const {
-    // check in write set for this address
+    // check in the location set for this address
     std::optional<T *> result(std::nullopt);
-    if (const auto entry = w.find_opt(to_addr(addr)); entry.has_value()) {
+    if (const auto entry = l.find_write(to_addr(addr)); entry.has_value()) {
       result = reinterpret_cast<T *>(entry.value());
     }
     return result;
@@ -69,8 +67,7 @@ public:
 
   template <typename T>
   __attribute__((always_inline)) void append_read(const T *addr) {
-
-    r.update({to_addr(addr), hashtbl[to_addr(addr)].get_version()});
+    l.register_read(to_addr(addr));
   }
 
   template <typename T>
@@ -80,42 +77,23 @@ public:
     If given as a lvalue we will copy(slow).
     If given as a rvalue we will move(fast).
     */
-    if (const auto entry = w.find_opt(to_addr(addr)); entry.has_value()) {
-      // Address already in write-set: overwrite existing staged value.
-      *reinterpret_cast<T *>(entry.value()) = std::forward<T>(val);
-      return;
-    }
-    // First write for this address in this transaction: stage a copied value.
-    T *obj = static_cast<T *>(store.allocate(sizeof(T), alignof(T)));
-    if constexpr (std::is_trivial_v<T>) {
-      // fast path for trivial data types.
-      std::memcpy(obj, &val, sizeof(T));
-    } else {
-        new (obj) T(std::forward<T>(val));
-    }
-    w.update(WriteOp(addr, obj));
+    l.register_write(to_addr(addr), std::forward<T>(val), store);
   }
 
   void clear() {
-    store.clear(w);
-    r.clear();
-    w.clear();
+    store.clear(l);
+    l.clear();
   }
 
-  WriteSetT &writes() noexcept { return w; }
-
-  ReadSetT &reads() noexcept { return r; }
+  LocationSetT &locations() { return l; }
 
 private:
-  ReadSetT r;
-  WriteSetT w;
+  LocationSetT l;
   StorePolicy store;
 };
-// inline static thread_local Log<WriteOrderedSet, ReadOrderedSet,
-// SynchronizedPoolPolicy> log;
-inline static thread_local Log<WriteHashVectorSet, ReadOrderedSet,
-                               PerThreadPolicy>
-    log;
-// inline static thread_local Log<WriteOrderedSet, ReadOrderedSet,
-// PerThreadPolicy> log;
+// inline static thread_local Log<LocationOrderedSet, SynchronizedPoolPolicy>
+// log; inline static thread_local Log<LocationOrderedSet, PerThreadPolicy> log;
+inline static thread_local Log<LocationHashVectorSet, PerThreadPolicy> log;
+// inline static thread_local Log<LocationHashVectorSet, SynchronizedPoolPolicy>
+// log;
 } // namespace tl2::internal

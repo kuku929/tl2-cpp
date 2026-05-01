@@ -1,6 +1,5 @@
 #pragma once
 #include "types.h"
-#include "write_set.h"
 #include <ankerl/unordered_dense.h>
 #include <atomic>
 #include <thread>
@@ -110,39 +109,4 @@ public:
 private:
   Pad<pad_size> pad;
 } static global_clock;
-
-template <typename WriteSet, typename LockSelector> class LockGuard {
-public:
-  LockGuard(WriteSet &w, LockSelector lock_selector) {
-    w.stable_sort();
-    m_locked.reserve(w.size());
-    ankerl::unordered_dense::set<VersionLock *> seen;
-    for (const WriteOp &op : w) {
-      VersionLock *lock = &lock_selector(op);
-      if (seen.insert(lock).second) {
-        lock->lock();
-        m_locked.push_back(lock);
-      }
-    }
-  }
-
-  ~LockGuard() {
-    for (auto it = m_locked.rbegin(); it != m_locked.rend(); ++it) {
-      (*it)->unlock();
-    }
-  }
-
-  LockGuard(const LockGuard &) = delete;
-  LockGuard &operator=(const LockGuard &) = delete;
-  LockGuard(LockGuard &&) = delete;
-  LockGuard &operator=(LockGuard &&) = delete;
-
-private:
-  std::vector<VersionLock *> m_locked;
-};
-
-template <typename WriteSet, typename LockSelector>
-auto make_lock_guard(WriteSet &w, LockSelector lock_selector) {
-  return LockGuard<WriteSet, LockSelector>(w, lock_selector);
-}
 } // namespace tl2::internal

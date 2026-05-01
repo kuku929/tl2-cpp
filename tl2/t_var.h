@@ -5,7 +5,7 @@
 #include "types.h"
 #include "version_lock.h"
 #include <cassert>
-#include <iostream>
+#include <iostream> // DEBUG
 #include <memory_resource>
 #include <thread>
 #include <type_traits>
@@ -19,8 +19,7 @@ public:
   TVar(const TVar<T> &other) noexcept { this->m_data = other.m_data; }
   TVar(TVar<T> &&other) noexcept { this->m_data = std::move(other.m_data); }
   // Otherwise TSan will flag optimistic read as a data race.
-  __attribute__((no_sanitize_thread))
-  explicit operator T() const {
+  __attribute__((no_sanitize_thread)) explicit operator T() const {
     /*
     We do it this way to encourage the compiler to
     perform copy elision. There is only one copy
@@ -29,14 +28,14 @@ public:
     manager.assert_in_transaction();
     log.append_read(&m_data);
     T result;
-    VersionLock &mutex = hashtbl[to_addr(&m_data)];
-    if (std::optional<T *> entry = log.value_at(&m_data); entry.has_value())
+    if (std::optional<T *> entry = log.value_at(&m_data); entry.has_value()) {
       result = *entry.value();
-    else {
+    } else {
       if constexpr (std::is_trivial_v<T>) {
         // fast path for trivial data types.
         result = m_data;
       } else {
+        VersionLock &mutex = hashtbl[to_addr(&m_data)];
         // default to using locks, beats the point of a STM.
         mutex.lock();
         result = m_data;

@@ -1,5 +1,5 @@
 #pragma once
-#include "write_set.h"
+#include "op.h"
 #include <array>
 #include <cstddef>
 #include <memory>
@@ -10,9 +10,11 @@
 namespace tl2::internal {
 class PerThreadPolicy {
 public:
-  template <typename WS> void clear(WS &w) {
-    for (const auto &op : w) {
-      op.free_heap();
+  template <typename LS> void clear(LS &l) {
+    for (auto &loc : l) {
+      if (loc.was_written()) {
+        loc.write_val.free_heap();
+      }
     }
     return res.release();
   }
@@ -27,11 +29,14 @@ private:
 
 class SynchronizedPoolPolicy {
 public:
-  template <typename WS> void clear(WS &w) {
-    // ?? can this be const
-    for (const auto &op : w) {
-      op.free_heap();
-      res.deallocate(reinterpret_cast<void *>(op.val_addr()), op.bytes_size());
+  template <typename LS> void clear(LS &l) {
+    for (auto &loc : l) {
+      if (loc.was_written()) {
+        WriteVal &wv = loc.write_val;
+        wv.free_heap();
+        res.deallocate(reinterpret_cast<void *>(wv.val_addr()),
+                       wv.bytes_size());
+      }
     }
   }
 

@@ -10,8 +10,9 @@ template <typename T> class CoarseList {
   struct Node {
     std::optional<T> item;
     int key;
-    Node* next;
-    Node(std::optional<T> i, int k, Node* n) : item(std::move(i)), key(k), next(n) {}
+    Node *next;
+    Node(std::optional<T> i, int k, Node *n)
+        : item(std::move(i)), key(k), next(n) {}
   };
 
 public:
@@ -21,19 +22,19 @@ public:
     head = new Node(std::nullopt, INT_MIN, tail);
   }
 
-  bool add(const T& item) {
+  bool add(const T &item) {
     const int key = std::hash<T>{}(item);
     std::lock_guard<std::mutex> g(lock);
     auto [pred, curr] = locate(key, head);
     if (curr->key == key) {
       return false;
     }
-    Node* node = new Node(item, key, curr);
+    Node *node = new Node(item, key, curr);
     pred->next = node;
     return true;
   }
 
-  bool remove(const T& item) {
+  bool remove(const T &item) {
     const int key = std::hash<T>{}(item);
     std::lock_guard<std::mutex> g(lock);
     auto [pred, curr] = locate(key, head);
@@ -44,10 +45,10 @@ public:
     return false;
   }
 
-  bool contains(const T& item) {
+  bool contains(const T &item) {
     const int key = std::hash<T>{}(item);
     std::lock_guard<std::mutex> g(lock);
-    Node* curr = head->next;
+    Node *curr = head->next;
     while (curr->key < key) {
       curr = curr->next;
     }
@@ -55,14 +56,14 @@ public:
   }
 
 private:
-  Node* head{};
-  Node* tail{};
+  Node *head{};
+  Node *tail{};
   std::mutex lock;
 
   // Returns (pred, curr) where curr->key >= key
-  static std::pair<Node*, Node*> locate(int key, Node* start) {
-    Node* pred = start;
-    Node* curr = pred->next;
+  static std::pair<Node *, Node *> locate(int key, Node *start) {
+    Node *pred = start;
+    Node *curr = pred->next;
     while (curr->key < key) {
       pred = curr;
       curr = curr->next;

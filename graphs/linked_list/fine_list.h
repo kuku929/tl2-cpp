@@ -10,9 +10,10 @@ template <typename T> class FineList {
   struct Node {
     std::optional<T> item;
     int key;
-    Node* next;
+    Node *next;
     std::mutex lock;
-    Node(std::optional<T> i, int k, Node* n) : item(std::move(i)), key(k), next(n) {}
+    Node(std::optional<T> i, int k, Node *n)
+        : item(std::move(i)), key(k), next(n) {}
   };
 
 public:
@@ -22,12 +23,12 @@ public:
     head = new Node(std::nullopt, INT_MIN, tail);
   }
 
-  bool add(const T& item) {
+  bool add(const T &item) {
     const int key = std::hash<T>{}(item);
 
-    Node* pred = head;
+    Node *pred = head;
     pred->lock.lock();
-    Node* curr = pred->next;
+    Node *curr = pred->next;
     curr->lock.lock();
 
     while (curr->key < key) {
@@ -41,7 +42,7 @@ public:
     if (curr->key == key) {
       result = false;
     } else {
-      Node* node = new Node(item, key, curr);
+      Node *node = new Node(item, key, curr);
       pred->next = node;
       result = true;
     }
@@ -51,12 +52,12 @@ public:
     return result;
   }
 
-  bool remove(const T& item) {
+  bool remove(const T &item) {
     const int key = std::hash<T>{}(item);
 
-    Node* pred = head;
+    Node *pred = head;
     pred->lock.lock();
-    Node* curr = pred->next;
+    Node *curr = pred->next;
     curr->lock.lock();
 
     while (curr->key < key) {
@@ -79,12 +80,12 @@ public:
     return result;
   }
 
-  bool contains(const T& item) {
+  bool contains(const T &item) {
     const int key = std::hash<T>{}(item);
 
-    Node* pred = head;
+    Node *pred = head;
     pred->lock.lock();
-    Node* curr = pred->next;
+    Node *curr = pred->next;
     curr->lock.lock();
 
     while (curr->key < key) {
@@ -102,8 +103,8 @@ public:
   }
 
 private:
-  Node* head{};
-  Node* tail{};
+  Node *head{};
+  Node *tail{};
 };
 
 } // namespace graphs::linked_list

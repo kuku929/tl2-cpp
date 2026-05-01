@@ -1,4 +1,5 @@
 #pragma once
+#include "lock_guard.h"
 #include "log.h"
 #include "state.h"
 #include "t_var.h"
@@ -15,43 +16,35 @@ void commit(version_t write_version);
 bool try_commit(const version_t read_version);
 
 inline void commit(version_t write_version) {
-  for (auto op : log.writes()) {
+  // One optimization is to construct the write
+  // set when we construct the lock guard and use
+  // it here.
+  for (const Location &loc : log.locations()) {
     // first bump up the version so that other threads
     // can abort if needed.
-    hashtbl[op.addr()].unsafe_set_version(write_version);
-    op.move();
+    if (!loc.was_written())
+      continue;
+    loc.set_version(write_version);
+    loc.move();
   }
 }
 
 inline bool try_commit() {
-  if (log.writes().size() != 0){
-    auto guard =
-        make_lock_guard(log.writes(), [](const WriteOp &op) -> VersionLock & {
-          return hashtbl[op.addr()];
-        });
-    const auto write_version = global_clock.incr_version();
-    if (write_version == manager.read_version() + 1) {
-      // no other thread has made changes commit
-      commit(write_version);
-      return true;
-    }
-    for (auto op : log.reads()) {
-      if (hashtbl[op.addr()].unsafe_get_version() > manager.read_version()) {
-        return false;
-      }
-    }
+  auto guard = make_lock_guard(log.locations());
+  const auto write_version = global_clock.incr_version();
+  if (write_version == manager.read_version() + 1) {
+    // no other thread has made changes commit
     commit(write_version);
+    return true;
   }
-  else{
-    if (global_clock.unsafe_get_version() == manager.read_version()) {
-      return true;
-    }
-    for (auto op : log.reads()) {
-      if (hashtbl[op.addr()].unsafe_get_version() > manager.read_version()) {
-        return false;
-      }
+  for (const Location &loc : log.locations()) {
+    if (!loc.was_read())
+      continue;
+    if (loc.get_version() > manager.read_version()) {
+      return false;
     }
   }
+  commit(write_version);
   return true;
 };
 } // namespace internal

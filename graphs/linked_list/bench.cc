@@ -37,16 +37,16 @@ struct Rng {
       : gen(seed), op_dist(0, 99), key_dist(0, key_range - 1) {}
 };
 
-template <typename List>
-void prefill(List &list, int count) {
+template <typename List> void prefill(List &list, int count) {
   for (int i = 0; i < count; ++i) {
     list.add(i);
   }
 }
 
 template <typename List>
-double run_benchmark(const string &list_name, const Workload &workload, int threads,
-                     int ops_per_thread, int key_range, int prefill_count) {
+double run_benchmark(const string &list_name, const Workload &workload,
+                     int threads, int ops_per_thread, int key_range,
+                     int prefill_count) {
   List list;
   prefill(list, prefill_count);
 
@@ -80,10 +80,10 @@ double run_benchmark(const string &list_name, const Workload &workload, int thre
   double sec = chrono::duration<double>(end - start).count();
   double total_ops = static_cast<double>(threads) * ops_per_thread;
 
-      double throughput = total_ops / sec;
-      cout << list_name << ',' << workload.name << ',' << threads << ',' << fixed
-        << setprecision(2) << throughput << '\n';
-      return throughput;
+  double throughput = total_ops / sec;
+  cout << list_name << ',' << workload.name << ',' << threads << ',' << fixed
+       << setprecision(2) << throughput << '\n';
+  return throughput;
 }
 
 } // namespace
@@ -101,25 +101,26 @@ int main() {
 
   for (const auto &workload : kWorkloads) {
     for (int t = 1; t <= 1; t *= 2) {
-        double stm = run_benchmark<zoo::ConcurrentLinkedList<int>>(
+      double stm = run_benchmark<zoo::ConcurrentLinkedList<int>>(
           "stm", workload, t, ops_per_thread, key_range, prefill_count);
-        csv << "stm," << workload.name << ',' << t << ',' << fixed
+      csv << "stm," << workload.name << ',' << t << ',' << fixed
           << setprecision(2) << stm << '\n';
 
-        // double coarse = run_benchmark<graphs::linked_list::CoarseList<int>>(
-        //   "coarse", workload, t, ops_per_thread, key_range, prefill_count);
-        // csv << "coarse," << workload.name << ',' << t << ',' << fixed
-        //   << setprecision(2) << coarse << '\n';
+      // double coarse = run_benchmark<graphs::linked_list::CoarseList<int>>(
+      //   "coarse", workload, t, ops_per_thread, key_range, prefill_count);
+      // csv << "coarse," << workload.name << ',' << t << ',' << fixed
+      //   << setprecision(2) << coarse << '\n';
 
-        // double fine = run_benchmark<graphs::linked_list::FineList<int>>(
-        //   "fine", workload, t, ops_per_thread, key_range, prefill_count);
-        // csv << "fine," << workload.name << ',' << t << ',' << fixed
-        //   << setprecision(2) << fine << '\n';
+      // double fine = run_benchmark<graphs::linked_list::FineList<int>>(
+      //   "fine", workload, t, ops_per_thread, key_range, prefill_count);
+      // csv << "fine," << workload.name << ',' << t << ',' << fixed
+      //   << setprecision(2) << fine << '\n';
 
-        // double lockfree = run_benchmark<graphs::linked_list::LockFreeList<int>>(
-        //   "lockfree", workload, t, ops_per_thread, key_range, prefill_count);
-        // csv << "lockfree," << workload.name << ',' << t << ',' << fixed
-        //   << setprecision(2) << lockfree << '\n';
+      // double lockfree =
+      // run_benchmark<graphs::linked_list::LockFreeList<int>>(
+      //   "lockfree", workload, t, ops_per_thread, key_range, prefill_count);
+      // csv << "lockfree," << workload.name << ',' << t << ',' << fixed
+      //   << setprecision(2) << lockfree << '\n';
     }
   }
 
