@@ -16,7 +16,7 @@ template <typename T> class LinkedList {
   };
 
 public:
-  LinkedList() : m_head(nullptr)
+  LinkedList() : m_head(nullptr), m_sz(0)
   {;}
 
   ~LinkedList() {
@@ -59,7 +59,7 @@ public:
             return old_head;
         }
       }
-      return nullptr;
+      return static_cast<Node *>(nullptr);
     }, result);
     delete node;
     return result;
@@ -88,16 +88,19 @@ public:
   }
 
   void update(const T &curr_item, const T& next_item) {
-    Node *curr = tl2::atomically([&]() {
+    tl2::atomically([&]() {
       Node *curr = static_cast<Node *>(m_head);
       while (curr != nullptr && static_cast<T>(curr->item) != curr_item) {
         curr = static_cast<Node *>(curr->next);
       }
-      return curr;
+      if(curr != nullptr) {
+        curr->item = next_item;
+      }
+      else {
+        add(next_item);
+      }
     });
-    if(curr != nullptr) {
-      curr->item = next_item;
-    }
+
   }
 
   std::size_t size() {
@@ -115,9 +118,9 @@ private:
     if(start == nullptr) {
         return {nullptr, nullptr};
     }
-    Node *pred = start;
-    Node *curr = static_cast<Node *>(pred->next);
-    while (curr != nullptr && curr->item != item) {
+    Node *pred = nullptr;
+    Node *curr = start;
+    while (curr != nullptr && static_cast<T>(curr->item) != item) {
       pred = curr;
       curr = static_cast<Node *>(curr->next);
     }
