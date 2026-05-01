@@ -30,9 +30,10 @@ public:
   }
 
   void add(const T &item) {
-    Node* node = new Node(item, head_val);
+    Node* node = new Node(item);
     tl2::atomically([&]() {
       Node * head_val = static_cast<Node *>(m_head);
+      node->next = head_val;
       m_head = node;
       m_sz = static_cast<std::size_t>(m_sz) + 1;
       &m_head->item;
