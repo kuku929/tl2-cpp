@@ -1,8 +1,8 @@
 # Transactional Locking II in C++
 a STM algorithm implementation of algorithm described in this [work](https://people.csail.mit.edu/shanir/publications/Transactional_Locking.pdf) by Dave Dice, Ori Shalev and Nir Shavit.
 
-Video Presentation : https://drive.google.com/file/d/1JAniG4C1ZfoKPLkfnKIV0K4Pi8j389Dg/view?usp=sharing
-
+Video Presentation : [https://drive.google.com/file/d/1JAniG4C1ZfoKPLkfnKIV0K4Pi8j389Dg/view?usp=sharing
+](https://drive.google.com/file/d/1mPjzrcgi8jn1RXG45igEPFgFiUi5R6bQ/view?usp=sharing)
 ## Requirements
 - [Bazel](https://github.com/bazelbuild/bazel)
 
