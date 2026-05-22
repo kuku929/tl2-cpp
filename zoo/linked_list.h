@@ -37,7 +37,7 @@ public:
     tl2::atomically([&]() {
       Node *head_val = static_cast<Node *>(m_head);
       node->next = head_val;
-      m_head = node.get();
+      m_head = node;
       m_sz = static_cast<std::size_t>(m_sz) + 1;
     });
   }
