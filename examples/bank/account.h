@@ -5,7 +5,7 @@ struct Account {
   int balance;
   std::string name;
   void print() {
-    std::cout << std::format("{0}", std::pair(balance, name)) << std::endl;
+    // std::cout << std::format("{0}", std::pair(balance, name)) << std::endl;
   }
 };
 
