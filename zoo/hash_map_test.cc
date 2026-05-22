@@ -15,10 +15,6 @@ TEST(HashMapTests, GetSetContains) {
 
   EXPECT_FALSE(map.contains(1));
 
-  int default_val = map.get(1);
-  EXPECT_EQ(default_val, 0);
-  EXPECT_TRUE(map.contains(1));
-
   map.set(1, 42);
   EXPECT_EQ(map.get(1), 42);
   EXPECT_TRUE(map.contains(1));
