@@ -5,7 +5,6 @@
 #include "t_var.h"
 #include <cstring>
 #include <exception>
-#include <chrono>
 #include <tuple>
 #include <thread>
 #include <type_traits>
